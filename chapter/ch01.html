@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Python 統計學教室第 1 章：Google Colab 基礎">
+  <title>第 1 章｜Google Colab 基礎｜Python 統計學教室</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-chapter="01">
+
+<header class="site-header">
+  <a class="brand" href="../index.html">
+    <span class="brand-mark">Py</span>
+    <span>Python 統計學教室</span>
+  </a>
+  <div class="header-actions">
+    <a class="header-link" href="../index.html">回首頁</a>
+    <button id="menu-button" class="menu-button" type="button" aria-label="開啟章節選單">☰ 目錄</button>
+  </div>
+</header>
+
+
+<div class="site-layout">
+  <aside class="sidebar" aria-label="課程章節導覽">
+    <p class="sidebar-title">Course Menu</p>
+    <ul id="chapter-nav" class="chapter-nav"></ul>
+  </aside>
+
+  <main class="content">
+    <section class="hero">
+      <p class="eyebrow">Chapter 01</p>
+      <h1>Google Colab 基礎</h1>
+      <p class="lead">認識 Colab 操作環境、檔案管理方式，並快速複習 Python 基礎語法。</p>
+    </section>
+
+
+<section>
+  <h2 id="what-is-colab">1. 什麼是 Google Colab？</h2>
+  <p>Google Colab（全名 Colaboratory）是 Google 提供的免費雲端 Python 開發環境。</p>
+  <h3 id="colab-features">主要特色</h3>
+  <ul>
+    <li>不需安裝軟體，打開瀏覽器就能撰寫與執行 Python。</li>
+    <li>程式碼在 Google 的雲端伺服器執行，不占用自己電腦的主要運算資源。</li>
+    <li>可依當下額度與資源狀況使用 GPU 或 TPU。</li>
+    <li>Notebook 可以儲存至 Google Drive，方便存取與分享。</li>
+  </ul>
+  <div class="callout">開啟方式：前往 <a href="https://colab.research.google.com" target="_blank" rel="noopener noreferrer">Google Colab</a>，登入 Google 帳號即可開始使用。</div>
+</section>
+
+<section>
+  <h2 id="interface">2. Colab 介面介紹</h2>
+  <p>Colab 的筆記本（Notebook）由一個個「儲存格」（Cell）組成，主要分成兩種：</p>
+  <ul>
+    <li><strong>程式碼儲存格（Code Cell）：</strong>撰寫並執行 Python 程式碼。</li>
+    <li><strong>文字儲存格（Text Cell）：</strong>撰寫說明文字，並支援 Markdown 語法。</li>
+  </ul>
+  <h3 id="run-cell">執行儲存格</h3>
+  <ul>
+    <li>點擊儲存格左邊的播放按鈕。</li>
+    <li><code>Shift + Enter</code>：執行並移動至下一格。</li>
+    <li><code>Ctrl + Enter</code>：執行但停留在目前儲存格。</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="file-transfer">3. 檔案上傳與下載</h2>
+  <p>使用 <code>google.colab.files</code> 模組，可以在自己的電腦與 Colab 執行環境之間傳送檔案。</p>
+  <h3 id="upload-file">上傳檔案</h3>
+  <pre><code>from google.colab import files
+
+uploaded = files.upload()</code></pre>
+  <p>執行後會跳出檔案選擇視窗，可以上傳 CSV、Excel 或其他資料檔案。</p>
+  <h3 id="download-file">下載檔案</h3>
+  <pre><code>from google.colab import files
+
+files.download(&quot;example.csv&quot;)</code></pre>
+  <p>這段程式會將 Colab 執行環境中的 <code>example.csv</code> 下載到自己的電腦。</p>
+  <div class="callout"><strong>注意：</strong>直接上傳的檔案只會暫存在目前的 Colab 執行階段中。執行階段重啟、逾時或被刪除後，檔案可能消失；需要長期保存時，建議搭配 Google Drive。</div>
+</section>
+
+<section>
+  <h2 id="mount-drive">4. 掛載 Google Drive</h2>
+  <p>若資料存放在 Google 雲端硬碟，可以先掛載 Drive，再讓 Colab 直接透過路徑讀取資料。</p>
+  <pre><code>from google.colab import drive
+
+drive.mount(&quot;/content/drive&quot;)</code></pre>
+  <p>授權完成後，可以使用下列路徑存取雲端硬碟中的檔案：</p>
+  <pre><code>path = &quot;/content/drive/MyDrive/data.csv&quot;</code></pre>
+  <div class="callout"><strong>路徑提醒：</strong><code>MyDrive</code> 是 Google Drive 的根目錄名稱，後面的資料夾與檔名必須依照自己的實際位置修改。</div>
+</section>
+
+<section>
+  <h2 id="python-review">5. Python 快速複習</h2>
+  <h3 id="variables">變數與資料型態</h3>
+  <pre><code>name = &quot;Alice&quot;       # 字串 str
+age = 20             # 整數 int
+height = 165.5       # 浮點數 float
+is_student = True    # 布林值 bool</code></pre>
+  <h3 id="list">串列 List</h3>
+  <pre><code>scores = [85, 90, 78, 92]
+
+print(scores[0])     # 85，索引從 0 開始
+print(scores[-1])    # 92，-1 表示最後一筆
+
+scores.append(100)
+print(scores)        # [85, 90, 78, 92, 100]
+print(len(scores))   # 5</code></pre>
+  <h3 id="loop">迴圈 for loop</h3>
+  <pre><code>for score in scores:
+    print(score)</code></pre>
+  <h3 id="condition">條件判斷 if / else</h3>
+  <pre><code>for score in scores:
+    if score &gt;= 90:
+        print(score, &quot;優異&quot;)
+    else:
+        print(score, &quot;普通&quot;)</code></pre>
+  <h3 id="function">函式 function</h3>
+  <pre><code>def add(a, b):
+    return a + b
+
+result = add(3, 5)
+print(result)   # 8</code></pre>
+  <h3 id="dictionary">字典 dict</h3>
+  <pre><code>student = {
+    &quot;name&quot;: &quot;Alice&quot;,
+    &quot;age&quot;: 20,
+    &quot;score&quot;: 90
+}
+
+print(student[&quot;name&quot;])   # Alice</code></pre>
+</section>
+
+<section>
+  <h2 id="summary">本章重點整理</h2>
+  <ul>
+    <li>Colab 是以瀏覽器操作的雲端 Python 開發環境。</li>
+    <li><code>google.colab.files</code> 可以上傳與下載檔案。</li>
+    <li><code>google.colab.drive</code> 可以掛載 Google Drive。</li>
+    <li>本章複習了變數、串列、迴圈、條件判斷、函式與字典。</li>
+  </ul>
+</section>
+
+<section>
+  <h2 id="practice">練習題</h2>
+  <ol>
+    <li>在 Colab 建立一個新的 Notebook，並成功上傳一個檔案。</li>
+    <li>掛載自己的 Google Drive，並印出其中任一檔案的完整路徑。</li>
+    <li>建立一個包含五個整數的串列，使用迴圈判斷每個數字是奇數還是偶數。</li>
+  </ol>
+</section>
+
+
+    <nav class="chapter-pagination" aria-label="章節切換">
+      <a href="../index.html">
+        <span class="pagination-label">← 返回</span>
+        <span class="pagination-title">課程首頁</span>
+      </a>
+      <a href="ch02.html">
+        <span class="pagination-label">下一章 →</span>
+        <span class="pagination-title">第 2 章｜資料讀取與繪圖</span>
+      </a>
+    </nav>
+
+    <footer class="site-footer">
+      © <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages.
+    </footer>
+  </main>
+
+  <aside class="page-toc" aria-label="本頁目錄">
+    <p class="toc-title">On This Page</p>
+    <ul id="page-toc-list"></ul>
+  </aside>
+</div>
+<div id="backdrop" class="backdrop"></div>
+<script src="../assets/js/site.js"></script>
+
+</body>
+</html>
