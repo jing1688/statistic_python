@@ -1,1 +1,867 @@
-<!DOCTYPE html> <html lang="zh-Hant"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="description" content="Python 統計學教室第 2 章：資料讀取與繪圖"> <title>第 2 章｜資料讀取與繪圖｜Python 統計學教室</title> <link rel="stylesheet" href="../assets/css/style.css"> </head> <body data-chapter="02"> <header class="site-header"> <a class="brand" href="../index.html"> <span class="brand-mark">Py</span> <span>Python 統計學教室</span> </a> <div class="header-actions"> <a class="header-link" href="../index.html">回首頁</a> <button id="menu-button" class="menu-button" type="button" aria-label="開啟章節選單">☰ 目錄</button> </div> </header> <div class="site-layout"> <aside class="sidebar" aria-label="課程章節導覽"> <p class="sidebar-title">Course Menu</p> <ul id="chapter-nav" class="chapter-nav"></ul> </aside> <main class="content"> <section class="hero"> <p class="eyebrow">Chapter 02</p> <h1>資料讀取與繪圖</h1> <p class="lead">使用 Pandas 讀取常見資料格式，並以 Matplotlib、Pandas 與 Seaborn 建立圖表。</p> </section> <section> <h2 id="upload-read">1. 讀取本機上傳的檔案</h2> <p>先透過 <code>google.colab.files</code> 上傳檔案，再使用 Pandas 讀取：</p> <pre><code>from google.colab import files import pandas as pd uploaded = files.upload() df = pd.read_csv(&quot;data.csv&quot;) df.head()</code></pre> <div class="callout"><strong>提醒：</strong>程式碼中的 <code>data.csv</code> 必須與實際上傳的檔名完全相同，包含副檔名及英文字母大小寫。</div> </section> <section> <h2 id="pandas-formats">2. 使用 Pandas 讀取不同格式的檔案</h2> <h3 id="read-csv">讀取 CSV</h3> <pre><code>import pandas as pd df = pd.read_csv(&quot;data.csv&quot;, encoding=&quot;utf-8&quot;, sep=&quot;,&quot;) df.head()</code></pre> <div class="callout">若中文 CSV 出現亂碼，可以依照檔案實際編碼嘗試 <code>utf-8-sig</code>、<code>big5</code> 或 <code>cp950</code>。</div> <h3 id="read-excel">讀取 Excel</h3> <pre><code>df = pd.read_excel(&quot;data.xlsx&quot;, sheet_name=&quot;Sheet1&quot;) df.head()</code></pre> <p><code>sheet_name</code> 可以填入工作表名稱，也可以用數字指定位置，例如 <code>sheet_name=0</code> 代表第一個工作表。</p> <h3 id="read-json">讀取 JSON</h3> <pre><code>df = pd.read_json(&quot;data.json&quot;) df.head()</code></pre> </section> <section> <h2 id="drive-read">3. 從 Google Drive 讀取資料</h2> <pre><code>from google.colab import drive drive.mount(&quot;/content/drive&quot;) import pandas as pd path = &quot;/content/drive/MyDrive/data.csv&quot; df = pd.read_csv(path) df.head()</code></pre> <p>實務上建議先在 Colab 左側的檔案瀏覽器找到檔案，再複製完整路徑，較不容易打錯。</p> </section> <section> <h2 id="matplotlib">4. 使用 Matplotlib 繪圖</h2> <p>Matplotlib 是 Python 最常用的基礎繪圖套件之一。</p> <pre><code>import matplotlib.pyplot as plt import numpy as np</code></pre> <div class="callout"><strong>中文顯示：</strong>Colab 的 Linux 環境通常沒有 <code>Microsoft JhengHei</code>。若需要中文標題，必須另外安裝中文字體，或先使用英文標題。</div> <h3 id="line-plot">折線圖 Line Plot</h3> <pre><code>x = [1, 2, 3, 4, 5] y = [10, 20, 15, 25, 30] plt.plot(x, y) plt.title(&quot;Line Plot Example&quot;) plt.xlabel(&quot;X&quot;) plt.ylabel(&quot;Y&quot;) plt.show()</code></pre> <h3 id="bar-plot">長條圖 Bar Plot</h3> <pre><code>categories = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;] values = [23, 45, 12, 36] plt.bar(categories, values) plt.title(&quot;Bar Plot Example&quot;) plt.show()</code></pre> <h3 id="histogram">直方圖 Histogram</h3> <pre><code>data = np.random.randn(1000) plt.hist(data, bins=30) plt.title(&quot;Histogram Example&quot;) plt.show()</code></pre> <h3 id="scatter-plot">散佈圖 Scatter Plot</h3> <pre><code>x = np.random.rand(50) y = np.random.rand(50) plt.scatter(x, y) plt.title(&quot;Scatter Plot Example&quot;) plt.show()</code></pre> </section> <section> <h2 id="pandas-plot">5. Pandas 內建繪圖功能</h2> <p>Pandas 的 DataFrame 與 Series 提供 <code>.plot()</code> 方法，適合快速檢查資料分布與變數關係。</p> <pre><code>df[&quot;column_name&quot;].plot(kind=&quot;line&quot;) df[&quot;column_name&quot;].plot(kind=&quot;hist&quot;) df.plot(x=&quot;col1&quot;, y=&quot;col2&quot;, kind=&quot;scatter&quot;)</code></pre> <div class="callout">Pandas 的繪圖功能底層仍使用 Matplotlib，因此也能搭配 <code>plt.title()</code>、<code>plt.xlabel()</code> 與 <code>plt.show()</code> 調整圖表。</div> </section> <section> <h2 id="seaborn">6. 使用 Seaborn 繪製統計圖表</h2> <p>Seaborn 建立在 Matplotlib 之上，提供較簡潔的統計視覺化語法，並能直接搭配 Pandas DataFrame。</p> <pre><code>import seaborn as sns import matplotlib.pyplot as plt sns.set_theme(style=&quot;whitegrid&quot;)</code></pre> <h3 id="seaborn-hist">直方圖與密度曲線</h3> <pre><code>sns.histplot(data=df, x=&quot;column_name&quot;, kde=True) plt.show()</code></pre> <h3 id="seaborn-scatter">依類別上色的散佈圖</h3> <pre><code>sns.scatterplot( data=df, x=&quot;col1&quot;, y=&quot;col2&quot;, hue=&quot;category_column&quot; ) plt.show()</code></pre> <div class="callout"><strong><code>hue</code> 的用途：</strong>依照類別欄位自動替資料點分組，有助於觀察不同群組的分布與關係。</div> </section> <section> <h2 id="summary">本章重點整理</h2> <ul> <li>Pandas 可以讀取 CSV、Excel、JSON 等多種資料格式。</li> <li>讀取電腦檔案前，需要先上傳至 Colab；讀取 Drive 檔案前，需要先掛載。</li> <li>Matplotlib 可以繪製折線圖、長條圖、直方圖與散佈圖。</li> <li>Pandas 的 <code>.plot()</code> 適合快速檢視資料。</li> <li>Seaborn 適合建立統計圖表，並可使用 <code>hue</code> 比較不同群組。</li> </ul> </section> <section> <h2 id="practice">練習題</h2> <ol> <li>上傳一份 CSV，使用 Pandas 讀取並顯示前五筆資料。</li> <li>選擇一個數值欄位，使用 Matplotlib 繪製直方圖。</li> <li>使用 Seaborn 的 <code>scatterplot()</code>，並以 <code>hue</code> 依類別欄位上色。</li> </ol> </section> <nav class="chapter-pagination" aria-label="章節切換"> <a href="ch01.html"> <span class="pagination-label">← 上一章</span> <span class="pagination-title">第 1 章｜Google Colab 基礎</span> </a> <a href="ch03.html"> <span class="pagination-label">下一章 →</span> <span class="pagination-title">第 3 章｜盒鬚圖與相關性分析</span> </a> </nav> <footer class="site-footer"> © <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages. </footer> </main> <aside class="page-toc" aria-label="本頁目錄"> <p class="toc-title">On This Page</p> <ul id="page-toc-list"></ul> </aside> </div> <div id="backdrop" class="backdrop"></div> <script src="../assets/js/site.js"></script> </body> </html>
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Python 統計學教室第 2 章：資料讀取、基本統計量與繪圖">
+  <title>第 2 章｜資料讀取與繪圖｜Python 統計學教室</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+
+<body data-chapter="02">
+
+<header class="site-header">
+  <a class="brand" href="../index.html">
+    <span class="brand-mark">Py</span>
+    <span>Python 統計學教室</span>
+  </a>
+
+  <div class="header-actions">
+    <a class="header-link" href="../index.html">回首頁</a>
+    <button
+      id="menu-button"
+      class="menu-button"
+      type="button"
+      aria-label="開啟章節選單"
+    >
+      ☰ 目錄
+    </button>
+  </div>
+</header>
+
+
+<div class="site-layout">
+
+  <aside class="sidebar" aria-label="課程章節導覽">
+    <p class="sidebar-title">Course Menu</p>
+    <ul id="chapter-nav" class="chapter-nav"></ul>
+  </aside>
+
+
+  <main class="content">
+
+    <section class="hero">
+      <p class="eyebrow">Chapter 02</p>
+      <h1>資料讀取與繪圖</h1>
+      <p class="lead">
+        使用 Pandas 讀取常見資料格式，計算平均數、中位數、眾數與幾何平均數，
+        並以 Matplotlib、Pandas 與 Seaborn 建立圖表。
+      </p>
+    </section>
+
+
+    <section>
+      <h2 id="upload-read">1. 讀取本機上傳的檔案</h2>
+
+      <p>
+        在 Google Colab 中，可以先透過
+        <code>google.colab.files</code>
+        上傳檔案，再使用 Pandas 讀取。
+      </p>
+
+      <pre><code>from google.colab import files
+import pandas as pd
+
+uploaded = files.upload()
+
+df = pd.read_csv("data.csv")
+
+df.head()</code></pre>
+
+      <div class="callout">
+        <strong>提醒：</strong>
+        程式碼中的 <code>data.csv</code> 必須與實際上傳的檔名完全相同，
+        包含副檔名以及英文字母大小寫。
+      </div>
+    </section>
+
+
+    <section>
+      <h2 id="pandas-formats">2. 使用 Pandas 讀取不同格式的檔案</h2>
+
+      <h3 id="read-csv">讀取 CSV</h3>
+
+      <pre><code>import pandas as pd
+
+df = pd.read_csv(
+    "data.csv",
+    encoding="utf-8",
+    sep=","
+)
+
+df.head()</code></pre>
+
+      <div class="callout">
+        若中文 CSV 出現亂碼，可以依照檔案的實際編碼，
+        嘗試使用 <code>utf-8-sig</code>、
+        <code>big5</code> 或 <code>cp950</code>。
+      </div>
+
+
+      <h3 id="read-excel">讀取 Excel</h3>
+
+      <pre><code>df = pd.read_excel(
+    "data.xlsx",
+    sheet_name="Sheet1"
+)
+
+df.head()</code></pre>
+
+      <p>
+        <code>sheet_name</code> 可以填入工作表名稱，
+        也可以用數字指定工作表的位置。
+      </p>
+
+      <pre><code># 讀取第一個工作表
+df = pd.read_excel(
+    "data.xlsx",
+    sheet_name=0
+)</code></pre>
+
+      <div class="callout">
+        <code>sheet_name=0</code> 代表第一個工作表，
+        <code>sheet_name=1</code> 則代表第二個工作表。
+      </div>
+
+
+      <h3 id="read-json">讀取 JSON</h3>
+
+      <pre><code>df = pd.read_json("data.json")
+
+df.head()</code></pre>
+    </section>
+
+
+    <section>
+      <h2 id="drive-read">3. 從 Google Drive 讀取資料</h2>
+
+      <p>
+        若檔案已經存放在 Google Drive，
+        可以先將 Drive 掛載到 Colab，再使用檔案路徑讀取資料。
+      </p>
+
+      <pre><code>from google.colab import drive
+
+drive.mount("/content/drive")
+
+import pandas as pd
+
+path = "/content/drive/MyDrive/data.csv"
+
+df = pd.read_csv(path)
+
+df.head()</code></pre>
+
+      <p>
+        實務上建議先在 Colab 左側的檔案瀏覽器中找到檔案，
+        再複製完整路徑，較不容易輸入錯誤。
+      </p>
+    </section>
+
+
+    <section>
+      <h2 id="descriptive-statistics">4. 基本敘述統計量</h2>
+
+      <p>
+        在繪製圖表之前，可以先使用基本統計量了解資料的中心位置與分布情形。
+        常見的集中趨勢統計量包括：
+      </p>
+
+      <ul>
+        <li>算術平均數 Arithmetic Mean</li>
+        <li>幾何平均數 Geometric Mean</li>
+        <li>眾數 Mode</li>
+        <li>中位數 Median</li>
+      </ul>
+
+
+      <h3 id="arithmetic-mean">算術平均數 Arithmetic Mean</h3>
+
+      <p>
+        算術平均數是將所有資料加總後，再除以資料筆數。
+      </p>
+
+      <p>假設有以下五筆資料：</p>
+
+      <pre><code>data = [10, 20, 30, 40, 50]</code></pre>
+
+      <p>其平均數計算方式為：</p>
+
+      <p>
+        平均數 =
+        <code>(10 + 20 + 30 + 40 + 50) ÷ 5 = 30</code>
+      </p>
+
+
+      <h4>不使用 mean() 計算平均數</h4>
+
+      <p>
+        可以先使用 <code>sum()</code> 計算總和，
+        再使用 <code>len()</code> 計算資料筆數。
+      </p>
+
+      <pre><code>data = [10, 20, 30, 40, 50]
+
+total = sum(data)
+number_of_data = len(data)
+
+average = total / number_of_data
+
+print("資料總和：", total)
+print("資料筆數：", number_of_data)
+print("平均數：", average)</code></pre>
+
+      <p>執行結果：</p>
+
+      <pre><code>資料總和： 150
+資料筆數： 5
+平均數： 30.0</code></pre>
+
+
+      <h4>使用迴圈自行計算總和</h4>
+
+      <p>
+        若希望進一步理解加總的運作方式，
+        也可以使用 <code>for</code> 迴圈逐筆累加。
+      </p>
+
+      <pre><code>data = [10, 20, 30, 40, 50]
+
+total = 0
+
+for value in data:
+    total = total + value
+
+average = total / len(data)
+
+print("平均數：", average)</code></pre>
+
+      <div class="callout">
+        <strong>計算概念：</strong>
+        平均數等於所有資料的總和除以資料筆數。
+      </div>
+
+
+      <h4>使用 NumPy 的 mean()</h4>
+
+      <p>
+        了解平均數的計算概念後，
+        可以使用 NumPy 的 <code>mean()</code> 快速完成計算。
+      </p>
+
+      <pre><code>import numpy as np
+
+data = [10, 20, 30, 40, 50]
+
+average = np.mean(data)
+
+print("平均數：", average)</code></pre>
+
+
+      <h4>使用 Pandas 的 mean()</h4>
+
+      <p>
+        若資料已經存放在 Pandas DataFrame 中，
+        可以對指定欄位使用 <code>.mean()</code>。
+      </p>
+
+      <pre><code>average = df["column_name"].mean()
+
+print("平均數：", average)</code></pre>
+
+
+      <h3 id="geometric-mean">幾何平均數 Geometric Mean</h3>
+
+      <p>
+        幾何平均數是先將所有數值相乘，
+        再對乘積開資料筆數次方根。
+      </p>
+
+      <p>
+        幾何平均數常用於成長率、投資報酬率、
+        比例變化以及具有連乘關係的資料。
+      </p>
+
+      <p>
+        假設資料為 <code>2、8、4</code>，
+        幾何平均數的計算方式為：
+      </p>
+
+      <p>
+        幾何平均數 =
+        <code>(2 × 8 × 4)<sup>1/3</sup> = 4</code>
+      </p>
+
+
+      <h4>自行計算幾何平均數</h4>
+
+      <pre><code>import math
+
+data = [2, 8, 4]
+
+product = math.prod(data)
+
+geometric_mean = product ** (1 / len(data))
+
+print("資料乘積：", product)
+print("幾何平均數：", geometric_mean)</code></pre>
+
+      <p>執行結果：</p>
+
+      <pre><code>資料乘積： 64
+幾何平均數： 4.0</code></pre>
+
+
+      <h4>使用 SciPy 的 gmean()</h4>
+
+      <pre><code>from scipy.stats import gmean
+
+data = [2, 8, 4]
+
+geometric_mean = gmean(data)
+
+print("幾何平均數：", geometric_mean)</code></pre>
+
+      <div class="callout">
+        <strong>注意：</strong>
+        一般的幾何平均數適用於正數資料。
+        若資料包含 0 或負數，應先確認該資料是否適合使用幾何平均數。
+      </div>
+
+
+      <h3 id="mode">眾數 Mode</h3>
+
+      <p>
+        眾數是資料中出現次數最多的數值。
+      </p>
+
+      <p>
+        一組資料可能只有一個眾數，也可能同時有多個眾數。
+      </p>
+
+      <p>例如：</p>
+
+      <pre><code>data = [1, 2, 2, 3, 3, 3, 4]</code></pre>
+
+      <p>
+        數字 <code>3</code> 出現三次，
+        是出現次數最多的數值，因此眾數為 <code>3</code>。
+      </p>
+
+
+      <h4>使用 Counter 計算眾數</h4>
+
+      <pre><code>from collections import Counter
+
+data = [1, 2, 2, 3, 3, 3, 4]
+
+frequency = Counter(data)
+
+highest_frequency = max(frequency.values())
+
+modes = [
+    value
+    for value, count in frequency.items()
+    if count == highest_frequency
+]
+
+print("各數值出現次數：", frequency)
+print("眾數：", modes)</code></pre>
+
+      <p>執行結果：</p>
+
+      <pre><code>各數值出現次數： Counter({3: 3, 2: 2, 1: 1, 4: 1})
+眾數： [3]</code></pre>
+
+
+      <h4>使用 Pandas 的 mode()</h4>
+
+      <pre><code>import pandas as pd
+
+data = pd.Series(
+    [1, 2, 2, 3, 3, 3, 4]
+)
+
+modes = data.mode()
+
+print("眾數：")
+print(modes)</code></pre>
+
+      <div class="callout">
+        Pandas 的 <code>.mode()</code> 會回傳 Series，
+        因為一組資料可能同時存在兩個以上的眾數。
+      </div>
+
+
+      <h3 id="median">中位數 Median</h3>
+
+      <p>
+        中位數是將資料由小到大排列後，
+        位於中央位置的數值。
+      </p>
+
+      <p>
+        中位數的計算方式會依資料筆數為奇數或偶數而不同。
+      </p>
+
+
+      <h4>資料筆數為奇數</h4>
+
+      <p>假設資料為：</p>
+
+      <pre><code>data = [7, 2, 9, 4, 5]</code></pre>
+
+      <p>
+        將資料排序後為
+        <code>[2, 4, 5, 7, 9]</code>，
+        中間的數值是 <code>5</code>，因此中位數為 <code>5</code>。
+      </p>
+
+      <pre><code>data = [7, 2, 9, 4, 5]
+
+sorted_data = sorted(data)
+
+middle_index = len(sorted_data) // 2
+
+median = sorted_data[middle_index]
+
+print("排序後資料：", sorted_data)
+print("中位數：", median)</code></pre>
+
+      <p>執行結果：</p>
+
+      <pre><code>排序後資料： [2, 4, 5, 7, 9]
+中位數： 5</code></pre>
+
+
+      <h4>資料筆數為偶數</h4>
+
+      <p>假設資料為：</p>
+
+      <pre><code>data = [7, 2, 9, 4, 5, 8]</code></pre>
+
+      <p>
+        將資料排序後為
+        <code>[2, 4, 5, 7, 8, 9]</code>。
+      </p>
+
+      <p>
+        因為資料筆數為偶數，
+        中位數為中間兩個數值 <code>5</code> 與 <code>7</code> 的平均：
+      </p>
+
+      <p>
+        <code>(5 + 7) ÷ 2 = 6</code>
+      </p>
+
+      <pre><code>data = [7, 2, 9, 4, 5, 8]
+
+sorted_data = sorted(data)
+
+middle_index = len(sorted_data) // 2
+
+left_value = sorted_data[middle_index - 1]
+right_value = sorted_data[middle_index]
+
+median = (left_value + right_value) / 2
+
+print("排序後資料：", sorted_data)
+print("中位數：", median)</code></pre>
+
+      <p>執行結果：</p>
+
+      <pre><code>排序後資料： [2, 4, 5, 7, 8, 9]
+中位數： 6.0</code></pre>
+
+
+      <h4>使用 NumPy 的 median()</h4>
+
+      <pre><code>import numpy as np
+
+data = [7, 2, 9, 4, 5, 8]
+
+median = np.median(data)
+
+print("中位數：", median)</code></pre>
+
+
+      <h4>使用 Pandas 的 median()</h4>
+
+      <pre><code>median = df["column_name"].median()
+
+print("中位數：", median)</code></pre>
+
+      <div class="callout">
+        <strong>平均數與中位數的差異：</strong>
+        平均數容易受到極端值影響。
+        當資料中存在特別大或特別小的數值時，
+        中位數通常更能代表資料的中心位置。
+      </div>
+
+
+      <h3 id="statistics-example">綜合範例</h3>
+
+      <p>
+        以下範例同時計算一組資料的平均數、中位數與眾數。
+      </p>
+
+      <pre><code>import pandas as pd
+import numpy as np
+
+data = pd.Series(
+    [10, 12, 12, 15, 18, 20, 100]
+)
+
+mean_value = data.mean()
+median_value = data.median()
+mode_value = data.mode()
+
+print("平均數：", mean_value)
+print("中位數：", median_value)
+print("眾數：")
+print(mode_value)</code></pre>
+
+      <div class="callout">
+        由於資料中存在極端值 <code>100</code>，
+        平均數會被向上拉高，而中位數受到的影響較小。
+      </div>
+    </section>
+
+
+    <section>
+      <h2 id="matplotlib">5. 使用 Matplotlib 繪圖</h2>
+
+      <p>
+        Matplotlib 是 Python 最常用的基礎繪圖套件之一。
+      </p>
+
+      <pre><code>import matplotlib.pyplot as plt
+import numpy as np</code></pre>
+
+      <div class="callout">
+        <strong>中文顯示：</strong>
+        Colab 的 Linux 環境通常沒有
+        <code>Microsoft JhengHei</code>。
+        若需要中文標題，必須另外安裝中文字體，
+        或先使用英文標題。
+      </div>
+
+
+      <h3 id="line-plot">折線圖 Line Plot</h3>
+
+      <p>
+        折線圖常用於觀察資料隨時間或順序的變化趨勢。
+      </p>
+
+      <pre><code>x = [1, 2, 3, 4, 5]
+y = [10, 20, 15, 25, 30]
+
+plt.plot(x, y)
+
+plt.title("Line Plot Example")
+plt.xlabel("X")
+plt.ylabel("Y")
+
+plt.show()</code></pre>
+
+
+      <h3 id="bar-plot">長條圖 Bar Plot</h3>
+
+      <p>
+        長條圖適合比較不同類別之間的數值差異。
+      </p>
+
+      <pre><code>categories = ["A", "B", "C", "D"]
+values = [23, 45, 12, 36]
+
+plt.bar(categories, values)
+
+plt.title("Bar Plot Example")
+plt.xlabel("Category")
+plt.ylabel("Value")
+
+plt.show()</code></pre>
+
+
+      <h3 id="histogram">直方圖 Histogram</h3>
+
+      <p>
+        直方圖可以用來觀察數值資料的分布情形，
+        例如資料是否集中、偏斜或具有多個高峰。
+      </p>
+
+      <pre><code>data = np.random.randn(1000)
+
+plt.hist(
+    data,
+    bins=30
+)
+
+plt.title("Histogram Example")
+plt.xlabel("Value")
+plt.ylabel("Frequency")
+
+plt.show()</code></pre>
+
+
+      <h3 id="scatter-plot">散佈圖 Scatter Plot</h3>
+
+      <p>
+        散佈圖可用於觀察兩個數值變數之間的關係。
+      </p>
+
+      <pre><code>x = np.random.rand(50)
+y = np.random.rand(50)
+
+plt.scatter(x, y)
+
+plt.title("Scatter Plot Example")
+plt.xlabel("X")
+plt.ylabel("Y")
+
+plt.show()</code></pre>
+    </section>
+
+
+    <section>
+      <h2 id="pandas-plot">6. Pandas 內建繪圖功能</h2>
+
+      <p>
+        Pandas 的 DataFrame 與 Series 提供
+        <code>.plot()</code> 方法，
+        適合快速檢查資料分布與變數關係。
+      </p>
+
+
+      <h3 id="pandas-line">使用 Pandas 繪製折線圖</h3>
+
+      <pre><code>df["column_name"].plot(
+    kind="line"
+)
+
+plt.show()</code></pre>
+
+
+      <h3 id="pandas-hist">使用 Pandas 繪製直方圖</h3>
+
+      <pre><code>df["column_name"].plot(
+    kind="hist",
+    bins=20
+)
+
+plt.show()</code></pre>
+
+
+      <h3 id="pandas-scatter">使用 Pandas 繪製散佈圖</h3>
+
+      <pre><code>df.plot(
+    x="col1",
+    y="col2",
+    kind="scatter"
+)
+
+plt.show()</code></pre>
+
+      <div class="callout">
+        Pandas 的繪圖功能底層仍使用 Matplotlib，
+        因此也能搭配 <code>plt.title()</code>、
+        <code>plt.xlabel()</code>、
+        <code>plt.ylabel()</code> 與
+        <code>plt.show()</code> 調整圖表。
+      </div>
+    </section>
+
+
+    <section>
+      <h2 id="seaborn">7. 使用 Seaborn 繪製統計圖表</h2>
+
+      <p>
+        Seaborn 建立在 Matplotlib 之上，
+        提供較簡潔的統計視覺化語法，
+        並能直接搭配 Pandas DataFrame。
+      </p>
+
+      <pre><code>import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.set_theme(
+    style="whitegrid"
+)</code></pre>
+
+
+      <h3 id="seaborn-hist">直方圖與密度曲線</h3>
+
+      <pre><code>sns.histplot(
+    data=df,
+    x="column_name",
+    kde=True
+)
+
+plt.show()</code></pre>
+
+      <p>
+        <code>kde=True</code> 會在直方圖上加入平滑的密度曲線，
+        有助於觀察資料的整體分布形狀。
+      </p>
+
+
+      <h3 id="seaborn-scatter">依類別上色的散佈圖</h3>
+
+      <pre><code>sns.scatterplot(
+    data=df,
+    x="col1",
+    y="col2",
+    hue="category_column"
+)
+
+plt.show()</code></pre>
+
+      <div class="callout">
+        <strong><code>hue</code> 的用途：</strong>
+        依照類別欄位自動將資料點分組並使用不同顏色呈現，
+        有助於觀察不同群組的分布與關係。
+      </div>
+    </section>
+
+
+    <section>
+      <h2 id="summary">本章重點整理</h2>
+
+      <ul>
+        <li>
+          Pandas 可以讀取 CSV、Excel、JSON 等多種資料格式。
+        </li>
+
+        <li>
+          讀取電腦檔案前，需要先將檔案上傳至 Colab。
+        </li>
+
+        <li>
+          讀取 Google Drive 中的檔案前，需要先掛載 Drive。
+        </li>
+
+        <li>
+          平均數可以使用資料總和除以資料筆數計算，
+          也可以使用 <code>mean()</code>。
+        </li>
+
+        <li>
+          幾何平均數適合具有連乘關係的正數資料。
+        </li>
+
+        <li>
+          眾數代表資料中出現次數最多的數值。
+        </li>
+
+        <li>
+          中位數是排序後位於中間位置的數值，
+          較不容易受到極端值影響。
+        </li>
+
+        <li>
+          Matplotlib 可以繪製折線圖、長條圖、直方圖與散佈圖。
+        </li>
+
+        <li>
+          Pandas 的 <code>.plot()</code> 適合快速檢視資料。
+        </li>
+
+        <li>
+          Seaborn 適合建立統計圖表，
+          並可使用 <code>hue</code> 比較不同群組。
+        </li>
+      </ul>
+    </section>
+
+
+    <section>
+      <h2 id="practice">練習題</h2>
+
+      <ol>
+        <li>
+          上傳一份 CSV，
+          使用 Pandas 讀取並顯示前五筆資料。
+        </li>
+
+        <li>
+          建立一組數值資料，
+          不使用 <code>mean()</code> 計算平均數。
+        </li>
+
+        <li>
+          使用 NumPy 的 <code>mean()</code>
+          計算相同資料的平均數，
+          並比較兩種方法的結果。
+        </li>
+
+        <li>
+          建立一組正數資料，
+          自行計算幾何平均數。
+        </li>
+
+        <li>
+          使用 Pandas 計算一個數值欄位的平均數、
+          中位數與眾數。
+        </li>
+
+        <li>
+          在資料中加入一個極端值，
+          比較平均數與中位數的變化。
+        </li>
+
+        <li>
+          選擇一個數值欄位，
+          使用 Matplotlib 繪製直方圖。
+        </li>
+
+        <li>
+          使用 Seaborn 的 <code>scatterplot()</code>，
+          並以 <code>hue</code> 依類別欄位上色。
+        </li>
+      </ol>
+    </section>
+
+
+    <nav class="chapter-pagination" aria-label="章節切換">
+
+      <a href="ch01.html">
+        <span class="pagination-label">← 上一章</span>
+        <span class="pagination-title">
+          第 1 章｜Google Colab 基礎
+        </span>
+      </a>
+
+      <a href="ch03.html">
+        <span class="pagination-label">下一章 →</span>
+        <span class="pagination-title">
+          第 3 章｜盒鬚圖與相關性分析
+        </span>
+      </a>
+
+    </nav>
+
+
+    <footer class="site-footer">
+      © <span id="current-year"></span>
+      Python 統計學教室．Built for GitHub Pages.
+    </footer>
+
+  </main>
+
+
+  <aside class="page-toc" aria-label="本頁目錄">
+    <p class="toc-title">On This Page</p>
+    <ul id="page-toc-list"></ul>
+  </aside>
+
+</div>
+
+
+<div id="backdrop" class="backdrop"></div>
+
+<script src="../assets/js/site.js"></script>
+
+</body>
+</html>
+```
