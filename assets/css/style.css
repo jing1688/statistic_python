@@ -315,14 +315,14 @@ h3 {
   background: var(--surface-soft);
 }
 .result-figure {
-  width: 100%;
+  width: 85%;
   margin: 1.5rem auto 2rem;
   text-align: center;
 }
 
 .result-figure img {
   display: block;
-  width: 72%;
+  width: 65%;
   max-width: 680px;
   height: auto;
   margin: 0 auto;
