@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Python 統計學教室第 3 章：盒鬚圖與相關性分析">
+  <meta name="description" content="Python 統計學教室第 3 章：盒鬚圖、IQR 與離群值分析">
   <title>第 3 章｜盒鬚圖與相關性分析｜Python 統計學教室</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -43,48 +43,253 @@
     <section class="hero">
       <p class="eyebrow">Chapter 03</p>
       <h1>盒鬚圖與相關性分析</h1>
-      <p class="lead">使用盒鬚圖檢查分布與離群值，並分析變數之間的相關性</p>
+      <p class="lead">
+        使用盒鬚圖檢查資料分布與離群值，並分析變數之間的相關性
+      </p>
     </section>
 
-    <section><h2 id="learning-goals">本章學習目標</h2>
-<ul>
-  <li>理解本章核心概念。</li>
-  <li>知道如何使用 Python 完成基本分析。</li>
-  <li>能解讀輸出結果並說明其統計意義。</li>
-</ul>
-</section>
-<section><h2 id="concepts">核心觀念</h2>
-<div class="placeholder">
-  <strong>內容待補：</strong>
-  這裡可以放定義、重要公式、直覺解釋與常見誤區。
-</div>
-</section>
-<section><h2 id="python-demo">Python 實作</h2>
-<p>以下先保留一個可替換的程式碼區塊：</p>
-<pre><code># TODO: 在此加入本章 Python 範例
-import numpy as np
-import pandas as pd
+    <section>
+      <h2 id="learning-goals">本章學習目標</h2>
 
-print("Hello, Statistics!")</code></pre>
-</section>
-<section><h2 id="example">範例解析</h2>
-<div class="placeholder">
-  <strong>範例待補：</strong>
-  可以加入資料集、計算步驟、圖表與結果解讀。
-</div>
-</section>
-<section><h2 id="practice">練習題</h2>
-<ol>
-  <li>概念題：請解釋本章最重要的統計概念。</li>
-  <li>計算題：請使用 Python 完成一個基礎分析。</li>
-  <li>應用題：請根據分析結果提出結論。</li>
-</ol>
-</section>
-<section><h2 id="summary">本章重點整理</h2>
-<div class="callout">
-  本區可整理三到五個重點，作為考前複習與快速查閱。
-</div>
-</section>
+      <ul>
+        <li>理解盒鬚圖的基本結構與統計意義。</li>
+        <li>了解四分位數與四分位距 IQR。</li>
+        <li>能使用 IQR 方法判斷可能的離群值。</li>
+        <li>能使用 Python 繪製並美化盒鬚圖。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="concepts">1. 盒鬚圖的核心觀念</h2>
+
+      <p>
+        盒鬚圖（Boxplot）是一種用來呈現資料分布的統計圖表，可以快速觀察資料的中位數、
+        四分位數、分散程度與可能的離群值。
+      </p>
+
+      <ul>
+        <li><strong>Q1：</strong>第一四分位數，約有 25% 的資料小於或等於此值。</li>
+        <li><strong>Q2：</strong>第二四分位數，也就是中位數。</li>
+        <li><strong>Q3：</strong>第三四分位數，約有 75% 的資料小於或等於此值。</li>
+        <li><strong>IQR：</strong>四分位距，計算方式為 Q3 − Q1。</li>
+      </ul>
+
+      <div class="callout">
+        盒子的左側與右側分別代表 Q1 與 Q3，盒子中的線代表中位數，
+        鬚線外單獨顯示的點通常表示可能的離群值。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="iqr">2. 使用 IQR 判斷離群值</h2>
+
+      <p>常見的離群值判斷方式，是利用四分位距建立上下界：</p>
+
+      <div class="callout">
+        IQR = Q3 − Q1<br>
+        下界 = Q1 − 1.5 × IQR<br>
+        上界 = Q3 + 1.5 × IQR
+      </div>
+
+      <p>
+        若某個數值小於下界，或大於上界，就可以將其視為一個可能的離群值。
+      </p>
+
+      <pre><code>import numpy as np
+
+scores = [
+    52, 60, 63, 65, 68, 70, 72,
+    75, 78, 80, 85, 95, 150
+]
+
+q1 = np.percentile(scores, 25)
+q3 = np.percentile(scores, 75)
+
+iqr = q3 - q1
+
+lower_bound = q1 - 1.5 * iqr
+upper_bound = q3 + 1.5 * iqr
+
+outliers = [
+    score
+    for score in scores
+    if score &lt; lower_bound or score &gt; upper_bound
+]
+
+print("Q1：", q1)
+print("Q3：", q3)
+print("IQR：", iqr)
+print("下界：", lower_bound)
+print("上界：", upper_bound)
+print("離群值：", outliers)</code></pre>
+
+      <div class="callout">
+        離群值不一定是錯誤資料。它可能是真實但少見的觀察值，因此刪除前應先了解資料背景。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="python-demo">3. 使用 Python 繪製盒鬚圖</h2>
+
+      <p>
+        以下使用 Matplotlib 繪製水平盒鬚圖，並調整畫布比例、色彩、線條與離群值樣式。
+      </p>
+
+      <pre><code>import matplotlib.pyplot as plt
+
+# 建立分數資料，其中 150 可能會被判斷為離群值
+scores = [
+    52, 60, 63, 65, 68, 70, 72,
+    75, 78, 80, 85, 95, 150
+]
+
+# 建立寬而扁的長方形畫布
+# 第一個數字代表寬度，第二個數字代表高度
+plt.figure(figsize=(9, 2.8))
+
+# 繪製盒鬚圖
+plt.boxplot(
+    scores,
+
+    # 將盒鬚圖改為水平方向
+    vert=False,
+
+    # 允許設定盒子的填充顏色
+    patch_artist=True,
+
+    # 設定盒子的寬度
+    widths=0.5,
+
+    # 設定盒子的填充色、邊框色與線條粗細
+    boxprops=dict(
+        facecolor="#CFE8FF",
+        edgecolor="#5B8DB8",
+        linewidth=1.8
+    ),
+
+    # 設定中位數線條的顏色與粗細
+    medianprops=dict(
+        color="#D9534F",
+        linewidth=2
+    ),
+
+    # 設定鬚線的顏色與粗細
+    whiskerprops=dict(
+        color="#5B8DB8",
+        linewidth=1.5
+    ),
+
+    # 設定鬚線末端短線的顏色與粗細
+    capprops=dict(
+        color="#5B8DB8",
+        linewidth=1.5
+    ),
+
+    # 設定離群值的形狀、顏色與大小
+    flierprops=dict(
+        marker="o",
+        markerfacecolor="#FFB6B9",
+        markeredgecolor="#D9534F",
+        markersize=7
+    )
+)
+
+# 設定圖表標題
+plt.title("Boxplot of Scores", fontsize=14)
+
+# 設定 X 軸名稱
+plt.xlabel("Score")
+
+# 加入 X 軸方向的虛線格線，幫助讀者判讀數值位置
+plt.grid(
+    axis="x",
+    linestyle="--",
+    alpha=0.4
+)
+
+# 自動調整圖表邊界，避免文字被裁切
+plt.tight_layout()
+
+# 顯示圖表
+plt.show()</code></pre>
+
+      <h3 id="boxplot-result">執行結果</h3>
+
+      <figure class="result-figure">
+        <img
+          src="../picts/boxplot_1.png"
+          alt="Python 繪製的水平盒鬚圖，右側顯示一個可能的離群值"
+          loading="lazy"
+        >
+        <figcaption>
+          圖 3-1　分數資料的水平盒鬚圖，其中 150 顯示為可能的離群值
+        </figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2 id="interpretation">4. 圖表解讀</h2>
+
+      <p>
+        圖中的淺藍色盒子代表 Q1 到 Q3，也就是中間 50% 的資料範圍；
+        盒子中央的紅色線條代表中位數。
+      </p>
+
+      <p>
+        左右兩側的鬚線會延伸至仍位於正常範圍內的最小值與最大值。
+        位於右側且與盒子分離的粉紅色圓點，代表數值 150，
+        因為它超過 IQR 方法所計算出的上界，因此被標示為可能的離群值。
+      </p>
+
+      <div class="callout">
+        盒鬚圖能幫助我們快速了解資料的中心位置、分散程度、偏斜方向與離群值，
+        但無法完整呈現資料的分布形狀，因此也可以搭配直方圖一起分析。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="visual-design">5. 提升圖表美觀與可視性</h2>
+
+      <p>
+        Matplotlib 的預設圖表可以透過調整畫布尺寸、圖表方向、填充顏色、
+        線條粗細、字體大小、格線與離群值樣式，提升圖表的美觀程度與可讀性。
+      </p>
+
+      <p>
+        例如，單一組資料的盒鬚圖通常適合使用水平排列，
+        並採用較寬、較低的長方形畫布；淺色填充可以減少視覺負擔，
+        而中位數與離群值則可使用較醒目的顏色，讓重要資訊更容易辨識。
+      </p>
+
+      <div class="callout">
+        圖表美化不只是改變顏色，而是要讓讀者更快找到重點。
+        良好的圖表設計應兼顧美觀、清楚與統計資訊的正確呈現。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="practice">練習題</h2>
+
+      <ol>
+        <li>請計算資料中的 Q1、Q3 與 IQR。</li>
+        <li>請利用 IQR 方法找出資料中的可能離群值。</li>
+        <li>請使用 Matplotlib 繪製一張水平盒鬚圖。</li>
+        <li>請將盒子的顏色改成其他淺色，並調整中位數線條。</li>
+        <li>請說明為什麼找到離群值後不能直接刪除。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="summary">本章重點整理</h2>
+
+      <ul>
+        <li>盒鬚圖可呈現中位數、四分位數、分散程度與可能的離群值。</li>
+        <li>IQR 等於 Q3 減去 Q1。</li>
+        <li>IQR 方法利用上下界判斷可能的離群值。</li>
+        <li>離群值不一定是錯誤，刪除前應先確認形成原因。</li>
+        <li>適當調整畫布、配色、線條與格線，可以提升圖表可讀性。</li>
+      </ul>
+    </section>
 
     <nav class="chapter-pagination" aria-label="章節切換">
 
