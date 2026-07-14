@@ -267,7 +267,242 @@ plt.show()</code></pre>
         良好的圖表設計應兼顧美觀、清楚與統計資訊的正確呈現。
       </div>
     </section>
+<section>
+  <h2 id="covariance">6. 共變異數（Covariance）</h2>
 
+  <p>
+    共變異數用來觀察兩個變數是否傾向一起變動。
+    若兩個變數經常往相同方向變動，共變異數通常為正；
+    若經常往相反方向變動，共變異數通常為負。
+  </p>
+
+  <ul>
+    <li><strong>共變異數大於 0：</strong>兩個變數大致同方向變動。</li>
+    <li><strong>共變異數小於 0：</strong>兩個變數大致反方向變動。</li>
+    <li><strong>共變異數接近 0：</strong>可能沒有明顯的線性共同變動。</li>
+  </ul>
+
+  <p>以下以讀書時間與考試成績為例：</p>
+
+  <pre><code>import numpy as np
+
+study_hours = np.array([2, 3, 4, 5, 6, 7, 8, 9])
+scores = np.array([55, 60, 65, 68, 72, 78, 82, 88])
+
+covariance_matrix = np.cov(
+    study_hours,
+    scores
+)
+
+print(covariance_matrix)</code></pre>
+
+  <p>
+    <code>np.cov()</code> 會回傳共變異數矩陣，其中右上角與左下角的數值，
+    就是讀書時間與考試成績之間的樣本共變異數。
+  </p>
+
+  <p>也可以直接取出兩個變數之間的共變異數：</p>
+
+  <pre><code>covariance = np.cov(
+    study_hours,
+    scores
+)[0, 1]
+
+print("共變異數：", covariance)</code></pre>
+
+  <div class="callout">
+    共變異數會受到資料單位影響。例如將「小時」改成「分鐘」，
+    共變異數的數值也會改變，因此通常不適合直接比較不同資料組合的關係強弱。
+  </div>
+</section>
+
+<section>
+  <h2 id="correlation">7. 相關係數（Correlation）</h2>
+
+  <p>
+    相關係數將共變異數標準化，數值介於 −1 與 1 之間，
+    可用來描述兩個變數線性關係的方向與強度。
+  </p>
+
+  <ul>
+    <li><strong>接近 1：</strong>具有較強的正線性關係。</li>
+    <li><strong>接近 −1：</strong>具有較強的負線性關係。</li>
+    <li><strong>接近 0：</strong>線性關係較弱。</li>
+  </ul>
+
+  <h3 id="pearson-correlation">Pearson 相關係數</h3>
+
+  <pre><code>import numpy as np
+
+study_hours = np.array([2, 3, 4, 5, 6, 7, 8, 9])
+scores = np.array([55, 60, 65, 68, 72, 78, 82, 88])
+
+correlation_matrix = np.corrcoef(
+    study_hours,
+    scores
+)
+
+print(correlation_matrix)</code></pre>
+
+  <p>若只需要兩個變數之間的相關係數，可以寫成：</p>
+
+  <pre><code>correlation = np.corrcoef(
+    study_hours,
+    scores
+)[0, 1]
+
+print("Pearson 相關係數：", correlation)</code></pre>
+
+  <p>
+    <code>np.corrcoef()</code> 會回傳相關矩陣。矩陣對角線固定為 1，
+    而右上角與左下角則是兩個變數之間的相關係數。
+  </p>
+
+  <h3 id="pandas-correlation">使用 Pandas 計算相關矩陣</h3>
+
+  <pre><code>import pandas as pd
+
+df = pd.DataFrame({
+    "study_hours": [2, 3, 4, 5, 6, 7, 8, 9],
+    "attendance": [65, 70, 72, 75, 80, 85, 88, 92],
+    "score": [55, 60, 65, 68, 72, 78, 82, 88]
+})
+
+correlation_matrix = df.corr()
+
+print(correlation_matrix)</code></pre>
+
+  <div class="callout">
+    相關係數只能表示變數之間的關聯程度，不能直接證明因果關係。
+    即使讀書時間與成績高度相關，也不能只靠相關係數認定所有成績差異都由讀書時間造成。
+  </div>
+</section>
+
+<section>
+  <h2 id="scatter-trend">(補充) 散佈圖與線性趨勢線</h2>
+
+  <p>
+    散佈圖可以呈現兩個數值變數之間的關係。
+    若資料點大致沿著一條直線排列，代表兩個變數可能具有線性關係。
+  </p>
+
+  <h3 id="basic-scatter">基本散佈圖</h3>
+
+  <pre><code>import matplotlib.pyplot as plt
+
+study_hours = [2, 3, 4, 5, 6, 7, 8, 9]
+scores = [55, 60, 65, 68, 72, 78, 82, 88]
+
+plt.figure(figsize=(8, 5))
+
+plt.scatter(
+    study_hours,
+    scores
+)
+
+plt.title("Study Hours and Scores")
+plt.xlabel("Study Hours")
+plt.ylabel("Score")
+
+plt.grid(
+    linestyle="--",
+    alpha=0.35
+)
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+  <h3 id="linear-trend">加入線性迴歸趨勢線</h3>
+
+  <pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+study_hours = np.array([2, 3, 4, 5, 6, 7, 8, 9])
+scores = np.array([55, 60, 65, 68, 72, 78, 82, 88])
+
+# 建立一階線性迴歸模型
+slope, intercept = np.polyfit(
+    study_hours,
+    scores,
+    1
+)
+
+# 計算趨勢線上的預測值
+trend_scores = (
+    slope * study_hours + intercept
+)
+
+plt.figure(figsize=(8, 5))
+
+# 繪製原始資料點
+plt.scatter(
+    study_hours,
+    scores,
+    s=65,
+    color="#9CC9F5",
+    edgecolor="#4F81BD",
+    linewidth=1.2,
+    label="Observed data"
+)
+
+# 繪製線性趨勢線
+plt.plot(
+    study_hours,
+    trend_scores,
+    color="#E07A5F",
+    linewidth=2.2,
+    label="Linear trend"
+)
+
+plt.title(
+    "Study Hours and Scores",
+    fontsize=14
+)
+
+plt.xlabel("Study Hours")
+plt.ylabel("Score")
+
+plt.grid(
+    linestyle="--",
+    alpha=0.35
+)
+
+plt.legend()
+plt.tight_layout()
+plt.show()</code></pre>
+
+  <p>
+    <code>np.polyfit(x, y, 1)</code> 會建立一階線性模型，
+    並回傳斜率與截距。趨勢線的方程式可寫成：
+  </p>
+
+  <div class="callout">
+    預測值 = 斜率 × x + 截距
+  </div>
+
+  <p>也可以印出迴歸方程式：</p>
+
+  <pre><code>print("斜率：", slope)
+print("截距：", intercept)
+
+print(
+    f"迴歸方程式：score = "
+    f"{slope:.2f} × study_hours + "
+    f"{intercept:.2f}"
+)</code></pre>
+
+  <h3 id="trend-interpretation">趨勢線解讀</h3>
+
+  <p>
+    若趨勢線由左下往右上延伸，表示兩個變數具有正向關係；
+    若由左上往右下延伸，則表示兩個變數具有負向關係。
+  </p>
+
+  <div class="callout">
+    趨勢線可以協助觀察資料的整體方向，但不代表所有資料點都會落在線上。
+    分析時仍應搭配相關係數、離群值與實際資料背景進行判斷。
+  </div>
+</section>
     <section>
       <h2 id="practice">練習題</h2>
 
