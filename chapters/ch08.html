@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Python 統計學教室第 8 章：抽樣與抽樣分配">
-  <title>第 8 章｜抽樣與抽樣分配｜Python 統計學教室</title>
+  <meta name="description" content="Python 統計學教室第 8 章：區間估計">
+  <title>第 8 章｜區間估計｜Python 統計學教室</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body data-chapter="08">
@@ -14,12 +14,19 @@
     <span class="brand-mark">Py</span>
     <span>Python 統計學教室</span>
   </a>
+
   <div class="header-actions">
     <a class="header-link" href="../index.html">回首頁</a>
-    <button id="menu-button" class="menu-button" type="button" aria-label="開啟章節選單">☰ 目錄</button>
+    <button
+      id="menu-button"
+      class="menu-button"
+      type="button"
+      aria-label="開啟章節選單"
+    >
+      ☰ 目錄
+    </button>
   </div>
 </header>
-
 
 <div class="site-layout">
   <aside class="sidebar" aria-label="課程章節導覽">
@@ -30,67 +37,675 @@
   <main class="content">
     <section class="hero">
       <p class="eyebrow">Chapter 08</p>
-      <h1>抽樣與抽樣分配</h1>
-      <p class="lead">抽樣方法、大數法則與中央極限定理</p>
+      <h1>區間估計</h1>
+      <p class="lead">
+        使用 Python 建立母體平均數與母體比例的信賴區間，
+        並估計指定誤差範圍所需的樣本數。
+      </p>
     </section>
 
-    <section><h2 id="learning-goals">本章學習目標</h2>
-<ul>
-  <li>理解本章核心概念。</li>
-  <li>知道如何使用 Python 完成基本分析。</li>
-  <li>能解讀輸出結果並說明其統計意義。</li>
-</ul>
-</section>
-<section><h2 id="concepts">核心觀念</h2>
-<div class="placeholder">
-  <strong>內容待補：</strong>
-  這裡可以放定義、重要公式、直覺解釋與常見誤區。
-</div>
-</section>
-<section><h2 id="python-demo">Python 實作</h2>
-<p>以下先保留一個可替換的程式碼區塊：</p>
-<pre><code># TODO: 在此加入本章 Python 範例
+    <section>
+      <h2 id="learning-goals">本章學習目標</h2>
+      <ul>
+        <li>會使用 Python 計算信賴區間。</li>
+        <li>會區分母體標準差已知與未知時的計算方式。</li>
+        <li>會使用 z 分配與 t 分配取得臨界值。</li>
+        <li>會建立母體比例的信賴區間。</li>
+        <li>會根據信心水準與誤差界限估計所需樣本數。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="setup">0. 套件與範例資料</h2>
+
+      <p>
+        這一章主要使用 NumPy 與 SciPy。
+        範例資料採用 25 輛節能車的每加侖英里數（mpg）。
+      </p>
+
+<pre><code>import math
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-print("Hello, Statistics!")</code></pre>
-</section>
-<section><h2 id="example">範例解析</h2>
-<div class="placeholder">
-  <strong>範例待補：</strong>
-  可以加入資料集、計算步驟、圖表與結果解讀。
-</div>
-</section>
-<section><h2 id="practice">練習題</h2>
-<ol>
-  <li>概念題：請解釋本章最重要的統計概念。</li>
-  <li>計算題：請使用 Python 完成一個基礎分析。</li>
-  <li>應用題：請根據分析結果提出結論。</li>
-</ol>
-</section>
-<section><h2 id="summary">本章重點整理</h2>
-<div class="callout">
-  本區可整理三到五個重點，作為考前複習與快速查閱。
-</div>
-</section>
+from scipy import stats</code></pre>
+
+<pre><code>mpg = np.array([
+    97, 117, 93, 79, 97,
+    87, 78, 83, 94, 96,
+    102, 98, 82, 96, 113,
+    113, 111, 90, 101, 99,
+    112, 89, 92, 96, 98
+])
+
+n = len(mpg)
+sample_mean = mpg.mean()
+sample_std = mpg.std(ddof=1)
+
+print("樣本數：", n)
+print("樣本平均數：", round(sample_mean, 3))
+print("樣本標準差：", round(sample_std, 3))</code></pre>
+    </section>
+
+    <section>
+      <h2 id="point-estimate">1. 點估計</h2>
+
+      <p>
+        使用樣本統計量估計母體參數時，可以直接先計算樣本平均數與樣本比例。
+      </p>
+
+      <h3 id="mean-point-estimate">母體平均數的點估計</h3>
+
+<pre><code>mean_estimate = np.mean(mpg)
+
+print("母體平均數的點估計：", mean_estimate)</code></pre>
+
+      <h3 id="proportion-point-estimate">母體比例的點估計</h3>
+
+      <p>
+        假設「成功」定義為 mpg 大於 100。
+      </p>
+
+<pre><code>success = mpg &gt; 100
+
+p_hat = success.mean()
+
+print("超過 100 mpg 的樣本比例：", round(p_hat, 3))</code></pre>
+    </section>
+
+    <section>
+      <h2 id="z-confidence-interval">2. 母體標準差已知：z 信賴區間</h2>
+
+      <p>
+        當母體標準差已知時，可以使用標準常態分配建立平均數信賴區間。
+      </p>
+
+      <h3 id="z-critical-value">取得 z 臨界值</h3>
+
+<pre><code>confidence_level = 0.95
+alpha = 1 - confidence_level
+
+z_critical = stats.norm.ppf(
+    1 - alpha / 2
+)
+
+print("z 臨界值：", round(z_critical, 4))</code></pre>
+
+      <h3 id="z-ci-example">範例：穀片盒重量</h3>
+
+      <p>
+        假設樣本平均重量為 1.02 磅、母體標準差為 0.03 磅，
+        樣本數為 25，計算 95% 信賴區間。
+      </p>
+
+<pre><code>x_bar = 1.02
+sigma = 0.03
+n = 25
+confidence_level = 0.95
+
+alpha = 1 - confidence_level
+z_critical = stats.norm.ppf(
+    1 - alpha / 2
+)
+
+standard_error = sigma / np.sqrt(n)
+margin_of_error = z_critical * standard_error
+
+lower = x_bar - margin_of_error
+upper = x_bar + margin_of_error
+
+print("標準誤：", round(standard_error, 4))
+print("誤差界限：", round(margin_of_error, 4))
+print("95% 信賴區間：", (round(lower, 4), round(upper, 4)))</code></pre>
+
+      <h3 id="z-ci-function">封裝成函式</h3>
+
+<pre><code>def confidence_interval_mean_known_sigma(
+    x_bar,
+    sigma,
+    n,
+    confidence_level=0.95
+):
+    alpha = 1 - confidence_level
+
+    z_critical = stats.norm.ppf(
+        1 - alpha / 2
+    )
+
+    standard_error = sigma / np.sqrt(n)
+    margin_of_error = z_critical * standard_error
+
+    return {
+        "lower": x_bar - margin_of_error,
+        "upper": x_bar + margin_of_error,
+        "margin_of_error": margin_of_error,
+        "standard_error": standard_error,
+        "critical_value": z_critical
+    }</code></pre>
+
+<pre><code>result = confidence_interval_mean_known_sigma(
+    x_bar=1.02,
+    sigma=0.03,
+    n=25,
+    confidence_level=0.95
+)
+
+result</code></pre>
+    </section>
+
+    <section>
+      <h2 id="confidence-levels">3. 不同信心水準的臨界值</h2>
+
+      <p>
+        下面一次比較 90%、95% 與 99% 信心水準。
+      </p>
+
+<pre><code>confidence_levels = [0.90, 0.95, 0.99]
+
+critical_values = pd.DataFrame({
+    "confidence_level": confidence_levels,
+    "alpha": [1 - c for c in confidence_levels],
+    "z_critical": [
+        stats.norm.ppf(
+            1 - (1 - c) / 2
+        )
+        for c in confidence_levels
+    ]
+})
+
+critical_values</code></pre>
+
+      <p>比較相同資料在不同信心水準下的區間：</p>
+
+<pre><code>comparison = []
+
+for confidence_level in confidence_levels:
+    result = confidence_interval_mean_known_sigma(
+        x_bar=1.02,
+        sigma=0.03,
+        n=25,
+        confidence_level=confidence_level
+    )
+
+    comparison.append({
+        "confidence_level": confidence_level,
+        "lower": result["lower"],
+        "upper": result["upper"],
+        "width": result["upper"] - result["lower"]
+    })
+
+pd.DataFrame(comparison)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="interval-width">4. 信賴區間寬度比較</h2>
+
+      <p>
+        使用 Python 觀察樣本數、標準差與信心水準對區間寬度的影響。
+      </p>
+
+      <h3 id="effect-of-sample-size">樣本數的影響</h3>
+
+<pre><code>sample_sizes = [16, 25, 50, 100, 400]
+
+rows = []
+
+for n in sample_sizes:
+    result = confidence_interval_mean_known_sigma(
+        x_bar=1.02,
+        sigma=0.03,
+        n=n,
+        confidence_level=0.95
+    )
+
+    rows.append({
+        "sample_size": n,
+        "margin_of_error": result["margin_of_error"],
+        "interval_width": 2 * result["margin_of_error"]
+    })
+
+sample_size_effect = pd.DataFrame(rows)
+
+sample_size_effect</code></pre>
+
+      <h3 id="effect-of-sigma">標準差的影響</h3>
+
+<pre><code>sigma_values = [0.02, 0.03, 0.05, 0.08]
+
+rows = []
+
+for sigma in sigma_values:
+    result = confidence_interval_mean_known_sigma(
+        x_bar=1.02,
+        sigma=sigma,
+        n=25,
+        confidence_level=0.95
+    )
+
+    rows.append({
+        "sigma": sigma,
+        "margin_of_error": result["margin_of_error"],
+        "interval_width": 2 * result["margin_of_error"]
+    })
+
+sigma_effect = pd.DataFrame(rows)
+
+sigma_effect</code></pre>
+
+      <h3 id="plot-width">畫出樣本數與區間寬度</h3>
+
+<pre><code>plt.figure(figsize=(8, 5))
+plt.plot(
+    sample_size_effect["sample_size"],
+    sample_size_effect["interval_width"],
+    marker="o"
+)
+plt.title("Sample Size and Confidence Interval Width")
+plt.xlabel("Sample Size")
+plt.ylabel("Interval Width")
+plt.show()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="t-confidence-interval">5. 母體標準差未知：t 信賴區間</h2>
+
+      <p>
+        母體標準差未知時，使用樣本標準差，
+        並以 t 分配的臨界值建立平均數信賴區間。
+      </p>
+
+      <h3 id="t-critical-values">不同自由度的 t 臨界值</h3>
+
+<pre><code>degrees_of_freedom = [2, 5, 24, 50]
+
+t_table = pd.DataFrame({
+    "df": degrees_of_freedom,
+    "t_critical_95": [
+        stats.t.ppf(
+            0.975,
+            df=df
+        )
+        for df in degrees_of_freedom
+    ]
+})
+
+t_table</code></pre>
+
+      <h3 id="t-ci-function">建立 t 信賴區間函式</h3>
+
+<pre><code>def confidence_interval_mean_unknown_sigma(
+    data,
+    confidence_level=0.95
+):
+    data = np.asarray(data)
+
+    n = len(data)
+    x_bar = data.mean()
+    sample_std = data.std(ddof=1)
+    degrees_of_freedom = n - 1
+
+    alpha = 1 - confidence_level
+
+    t_critical = stats.t.ppf(
+        1 - alpha / 2,
+        df=degrees_of_freedom
+    )
+
+    standard_error = sample_std / np.sqrt(n)
+    margin_of_error = t_critical * standard_error
+
+    return {
+        "sample_mean": x_bar,
+        "sample_std": sample_std,
+        "degrees_of_freedom": degrees_of_freedom,
+        "critical_value": t_critical,
+        "standard_error": standard_error,
+        "margin_of_error": margin_of_error,
+        "lower": x_bar - margin_of_error,
+        "upper": x_bar + margin_of_error
+    }</code></pre>
+
+      <h3 id="mpg-t-ci">節能車 mpg 的 90% 信賴區間</h3>
+
+<pre><code>mpg_result = confidence_interval_mean_unknown_sigma(
+    mpg,
+    confidence_level=0.90
+)
+
+mpg_result</code></pre>
+
+      <p>只顯示較重要的結果：</p>
+
+<pre><code>print(
+    "樣本平均數：",
+    round(mpg_result["sample_mean"], 3)
+)
+
+print(
+    "誤差界限：",
+    round(mpg_result["margin_of_error"], 3)
+)
+
+print(
+    "90% 信賴區間：",
+    (
+        round(mpg_result["lower"], 3),
+        round(mpg_result["upper"], 3)
+    )
+)</code></pre>
+
+      <h3 id="scipy-t-interval">使用 SciPy 直接計算</h3>
+
+<pre><code>confidence_level = 0.90
+
+lower, upper = stats.t.interval(
+    confidence=confidence_level,
+    df=n - 1,
+    loc=sample_mean,
+    scale=sample_std / np.sqrt(n)
+)
+
+print(lower, upper)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="proportion-confidence-interval">6. 母體比例的信賴區間</h2>
+
+      <p>
+        以超過 100 mpg 的車輛比例為例，建立母體比例的信賴區間。
+      </p>
+
+<pre><code>success_count = np.sum(mpg &gt; 100)
+n = len(mpg)
+
+p_hat = success_count / n
+
+print("成功次數：", success_count)
+print("樣本比例：", round(p_hat, 3))</code></pre>
+
+      <h3 id="wald-proportion-ci">常態近似比例區間</h3>
+
+<pre><code>confidence_level = 0.90
+alpha = 1 - confidence_level
+
+z_critical = stats.norm.ppf(
+    1 - alpha / 2
+)
+
+standard_error = np.sqrt(
+    p_hat * (1 - p_hat) / n
+)
+
+margin_of_error = z_critical * standard_error
+
+lower = p_hat - margin_of_error
+upper = p_hat + margin_of_error
+
+print("90% 比例信賴區間：", (round(lower, 3), round(upper, 3)))</code></pre>
+
+      <h3 id="proportion-ci-function">封裝成函式</h3>
+
+<pre><code>def confidence_interval_proportion(
+    success_count,
+    n,
+    confidence_level=0.95
+):
+    p_hat = success_count / n
+
+    alpha = 1 - confidence_level
+
+    z_critical = stats.norm.ppf(
+        1 - alpha / 2
+    )
+
+    standard_error = np.sqrt(
+        p_hat * (1 - p_hat) / n
+    )
+
+    margin_of_error = z_critical * standard_error
+
+    return {
+        "p_hat": p_hat,
+        "standard_error": standard_error,
+        "margin_of_error": margin_of_error,
+        "lower": max(0, p_hat - margin_of_error),
+        "upper": min(1, p_hat + margin_of_error)
+    }</code></pre>
+
+<pre><code>proportion_result = confidence_interval_proportion(
+    success_count=7,
+    n=25,
+    confidence_level=0.90
+)
+
+proportion_result</code></pre>
+    </section>
+
+    <section>
+      <h2 id="sample-size-mean">7. 估計母體平均數所需樣本數</h2>
+
+      <p>
+        給定信心水準、預估標準差與可接受誤差，
+        可以反推最低樣本數。
+      </p>
+
+<pre><code>def required_sample_size_mean(
+    sigma,
+    margin_of_error,
+    confidence_level=0.95
+):
+    alpha = 1 - confidence_level
+
+    z_critical = stats.norm.ppf(
+        1 - alpha / 2
+    )
+
+    n = (
+        z_critical * sigma
+        / margin_of_error
+    ) ** 2
+
+    return math.ceil(n)</code></pre>
+
+      <p>
+        假設要建立 90% 信賴區間，預估標準差為 10.5 mpg，
+        並希望誤差不超過 2 mpg：
+      </p>
+
+<pre><code>required_n = required_sample_size_mean(
+    sigma=10.5,
+    margin_of_error=2,
+    confidence_level=0.90
+)
+
+print("所需最低樣本數：", required_n)</code></pre>
+
+      <div class="callout">
+        樣本數必須向上取整。因為抽 74.58 個人這件事，除非你的研究對象是樂高人，不然通常不太可行。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="sample-size-proportion">8. 估計母體比例所需樣本數</h2>
+
+      <p>
+        若沒有先前比例估計，通常可以使用 <code>p = 0.5</code>，
+        因為這會得到最保守、最大的樣本數。
+      </p>
+
+<pre><code>def required_sample_size_proportion(
+    p_estimate,
+    margin_of_error,
+    confidence_level=0.95
+):
+    alpha = 1 - confidence_level
+
+    z_critical = stats.norm.ppf(
+        1 - alpha / 2
+    )
+
+    n = (
+        z_critical / margin_of_error
+    ) ** 2 * p_estimate * (1 - p_estimate)
+
+    return math.ceil(n)</code></pre>
+
+      <p>
+        假設要建立 90% 信賴區間，
+        並希望誤差不超過 0.10：
+      </p>
+
+<pre><code>required_n = required_sample_size_proportion(
+    p_estimate=0.5,
+    margin_of_error=0.10,
+    confidence_level=0.90
+)
+
+print("所需最低樣本數：", required_n)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="coverage-simulation">9. 信賴區間涵蓋率模擬</h2>
+
+      <p>
+        下面模擬重複抽樣 1,000 次，
+        查看 95% 信賴區間大約有多少比例會包含真正的母體平均數。
+      </p>
+
+<pre><code>np.random.seed(123)
+
+population_mean = 100
+population_sigma = 15
+
+sample_size = 25
+n_sim = 1000
+confidence_level = 0.95
+
+alpha = 1 - confidence_level
+z_critical = stats.norm.ppf(
+    1 - alpha / 2
+)
+
+contains_mean = []
+
+intervals = []
+
+for _ in range(n_sim):
+    sample = np.random.normal(
+        loc=population_mean,
+        scale=population_sigma,
+        size=sample_size
+    )
+
+    x_bar = sample.mean()
+
+    margin_of_error = (
+        z_critical
+        * population_sigma
+        / np.sqrt(sample_size)
+    )
+
+    lower = x_bar - margin_of_error
+    upper = x_bar + margin_of_error
+
+    contains_mean.append(
+        lower &lt;= population_mean &lt;= upper
+    )
+
+    intervals.append(
+        (lower, upper)
+    )
+
+coverage_rate = np.mean(contains_mean)
+
+print(
+    "模擬涵蓋率：",
+    round(coverage_rate, 3)
+)</code></pre>
+
+      <h3 id="coverage-plot">畫出前 50 組信賴區間</h3>
+
+<pre><code>plt.figure(figsize=(9, 8))
+
+for i, (lower, upper) in enumerate(intervals[:50]):
+    plt.plot(
+        [lower, upper],
+        [i, i]
+    )
+
+plt.axvline(
+    population_mean,
+    linestyle="--",
+    label="Population Mean"
+)
+
+plt.title("First 50 Confidence Intervals")
+plt.xlabel("Interval")
+plt.ylabel("Simulation")
+plt.legend()
+plt.show()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="practice">練習題</h2>
+
+      <ol>
+        <li>
+          已知樣本平均數為 106、母體標準差為 15、樣本數為 22，
+          計算 90% 與 99% 信賴區間。
+        </li>
+        <li>
+          將穀片盒範例的樣本數從 25 改成 16，
+          比較信賴區間寬度。
+        </li>
+        <li>
+          使用 mpg 資料建立 95% 的 t 信賴區間。
+        </li>
+        <li>
+          計算 mpg 大於等於 100 的比例信賴區間，
+          並比較 90% 與 95% 的區間寬度。
+        </li>
+        <li>
+          若希望 95% 信賴區間的誤差不超過 1.5，
+          且預估標準差為 12，計算所需樣本數。
+        </li>
+        <li>
+          將涵蓋率模擬次數增加到 10,000 次，
+          查看結果是否更接近 0.95。
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="summary">本章重點整理</h2>
+
+      <ul>
+        <li><code>stats.norm.ppf()</code> 可以取得 z 臨界值。</li>
+        <li>母體標準差已知時，可以使用 z 信賴區間。</li>
+        <li>母體標準差未知時，可以使用 <code>stats.t.ppf()</code> 與 t 信賴區間。</li>
+        <li>樣本數越大，信賴區間通常越窄。</li>
+        <li>信心水準越高，信賴區間通常越寬。</li>
+        <li>母體比例區間可以利用樣本比例與常態近似計算。</li>
+        <li>指定誤差界限後，可以反推最低樣本數。</li>
+        <li>重複抽樣模擬可以觀察信賴區間的長期涵蓋率。</li>
+      </ul>
+    </section>
 
     <nav class="chapter-pagination" aria-label="章節切換">
-      
-        <a href="ch07.html">
-          <span class="pagination-label">← 上一章</span>
-          <span class="pagination-title">第 7 章｜抽樣與抽樣分配</span>
-        </a>
-        
-      
-        <a href="ch09.html">
-          <span class="pagination-label">下一章 →</span>
-          <span class="pagination-title">第 9 章｜信賴區間</span>
-        </a>
-        
+      <a href="ch07.html">
+        <span class="pagination-label">← 上一章</span>
+        <span class="pagination-title">第 7 章｜抽樣</span>
+      </a>
+
+      <a href="ch09.html">
+        <span class="pagination-label">下一章 →</span>
+        <span class="pagination-title">第 9 章｜信賴區間</span>
+      </a>
     </nav>
 
     <footer class="site-footer">
-      © <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages.
+      <p>© <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages.</p>
+      <p>此教材基於 2025 統計學（暑）蕭佳蘋助教之教材改編而成。</p>
     </footer>
   </main>
 
@@ -99,8 +714,8 @@ print("Hello, Statistics!")</code></pre>
     <ul id="page-toc-list"></ul>
   </aside>
 </div>
+
 <div id="backdrop" class="backdrop"></div>
 <script src="../assets/js/site.js"></script>
-
 </body>
 </html>
