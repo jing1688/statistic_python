@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Python 統計學教室第 7 章：常見機率分配">
-  <title>第 7 章｜常見機率分配｜Python 統計學教室</title>
+  <meta name="description" content="Python 統計學教室第 7 章：抽樣與抽樣分配">
+  <title>第 7 章｜抽樣與抽樣分配｜Python 統計學教室</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body data-chapter="07">
@@ -30,47 +30,139 @@
   <main class="content">
     <section class="hero">
       <p class="eyebrow">Chapter 07</p>
-      <h1>常見機率分配</h1>
-      <p class="lead">離散與連續機率分配的概念與 Python 實作</p>
+      <h1>抽樣與抽樣分配</h1>
+      <p class="lead">理解中央極限定理、標準誤以及如何在 Python 中實作統計抽樣</p>
     </section>
 
     <section><h2 id="learning-goals">本章學習目標</h2>
 <ul>
-  <li>理解本章核心概念。</li>
-  <li>知道如何使用 Python 完成基本分析。</li>
-  <li>能解讀輸出結果並說明其統計意義。</li>
+  <li>瞭解常見的抽樣偏差與隨機抽樣方法（簡單隨機、分層、集群抽樣）。</li>
+  <li>區分母體參數（Parameter）與樣本統計量（Statistic）。</li>
+  <li>掌握樣本平均數與樣本比例的抽樣分配及「標準誤」（Standard Error, SE）。</li>
+  <li>深刻理解**中央極限定理（Central Limit Theorem, CLT）**的統計意義與應用。</li>
+  <li>能使用 Python（SciPy / NumPy / Matplotlib）計算機率、模擬 CLT 並繪製品質管制圖（Control Charts）。</li>
 </ul>
 </section>
-<section><h2 id="concepts">核心觀念</h2>
-<div class="placeholder">
-  <strong>內容待補：</strong>
-  這裡可以放定義、重要公式、直覺解釋與常見誤區。
-</div>
-</section>
-<section><h2 id="python-demo">Python 實作</h2>
-<p>以下先保留一個可替換的程式碼區塊：</p>
-<pre><code># TODO: 在此加入本章 Python 範例
-import numpy as np
-import pandas as pd
 
-print("Hello, Statistics!")</code></pre>
+<section><h2 id="concepts">核心觀念</h2>
+<p>在推論統計中，我們通常無法實測整個母體（Population），而是透過抽取樣本（Sample）來推估母體參數。抽樣的過程會產生**隨機波動（抽樣誤差）**，而統計學的核心概念就是研究這些統計量在重複抽樣下的機率分配——即**抽樣分配（Sampling Distribution）**。</p>
+<ul>
+  <li><strong>標準誤（Standard Error, SE）：</strong>用來衡量樣本統計量（如平均數 $\bar{x}$）在不同樣本之間的變異程度。平均數標準誤公式為 $SE(\bar{X}) = \frac{\sigma}{\sqrt{n}}$。樣本數 $n$ 增加 4 倍，標準誤會減半。</li>
+  <li><strong>中央極限定理（CLT）：</strong>不論母體原本的分配形狀為何（即使是均勻分配或指數分配），只要**樣本數足夠大（通常 $n \ge 30$）**，其「樣本平均數 $\bar{X}$」的抽樣分配都會趨近於常態分配。</li>
+  <li><strong>統計品質管制（SQC）：</strong>利用抽樣分配的原理（均值 $\pm 3\times SE$）建立管制界限（UCL / LCL），藉此區分製程中的「偶然變異（Chance variation）」與「異常變異（Assignable variation）」。</li>
+</ul>
 </section>
+
+<section><h2 id="python-demo">Python 實作</h2>
+<p>以下程式碼將示範本章的三個核心統計情境：<b>中央極限定理模擬</b>、<b>樣本平均數與比例的機率計算</b>，以及<b>品質管制圖（Control Chart）實作</b>。</p>
+<pre><code>import numpy as np
+import pandas as pd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+
+# 設定隨機種子以確保結果可重複
+np.random.seed(42)
+
+# ==========================================
+# 1. 中央極限定理 (CLT) 模擬：從非常態母體抽樣
+# ==========================================
+# 假設母體為「指數分配」（右偏嚴重，非常態），平均數 = 10
+population_mean = 10
+population_data = np.random.exponential(scale=population_mean, size=100000)
+
+sample_sizes = [1, 5, 30, 100]
+sample_means_dict = {}
+
+# 模擬重複抽樣 2,000 次
+num_samples = 2000
+for n in sample_sizes:
+    # 每次抽出 n 個樣本，共抽 2000 次，計算平均數
+    samples = np.random.choice(population_data, size=(num_samples, n), replace=True)
+    sample_means_dict[f'n={n}'] = np.mean(samples, axis=1)
+
+print("--- 1. 中央極限定理模擬結果 ---")
+for n_label, means in sample_means_dict.items():
+    print(f"{n_label:5s} | 樣本平均數的均值: {np.mean(means):.2f} | 標準誤(SE): {np.std(means):.2f}")
+
+
+# ==========================================
+# 2. 抽樣分配機率計算 (以 Starbucks 冰咖啡為例)
+# ==========================================
+# 情境 A：連續變數 (樣本平均數 x̄)
+# 歷史母體平均消費 μ = 4.18, 標準差 σ = 0.84。隨機抽取 n = 50 人，計算平均消費 >= 4.26 的機率
+mu, sigma, n, x_bar = 4.18, 0.84, 50, 4.26
+se_mean = sigma / np.sqrt(n)
+z_mean = (x_bar - mu) / se_mean
+prob_mean = 1 - stats.norm.cdf(z_mean) # 或 stats.norm.sf(z_mean)
+
+print("\n--- 2. 冰咖啡調查機率計算 ---")
+print(f"平均消費 >= $4.26 的機率: {prob_mean:.4f} (Z = {z_mean:.2f})")
+
+# 情境 B：比例變數 (樣本比例 p̂)
+# 歷史女性比例 p = 0.43。隨機抽取 n = 50 人，計算女性比例 >= 0.46 的機率
+p_pop, n_prop, p_bar = 0.43, 50, 0.46
+se_prop = np.sqrt((p_pop * (1 - p_pop)) / n_prop)
+z_prop = (p_bar - p_pop) / se_prop
+prob_prop = 1 - stats.norm.cdf(z_prop)
+
+print(f"女性顧客比例 >= 46% 的機率: {prob_prop:.4f} (Z = {z_prop:.2f})")
+
+
+# ==========================================
+# 3. 統計品質管制圖 (X-bar Chart) 實作
+# ==========================================
+# 瓶裝咖啡標準灌裝量 μ = 500 ml，標準差 σ = 4 ml。每小時抽樣 n = 4 瓶，共檢查 10 個時段
+target_mu, std_dev, sample_n = 500, 4, 4
+se_qc = std_dev / np.sqrt(sample_n) # SE = 4 / sqrt(4) = 2.0
+
+# 建立 3 倍標準誤的管制界限 (3-Sigma Limits)
+ucl = target_mu + 3 * se_qc # 506
+lcl = target_mu - 3 * se_qc # 494
+
+# 模擬 10 個時段的樣本平均數（假設下午 13:00 發生設備異常，灌裝量衝高到 507 ml）
+time_hours = [f"{9+i}:00" for i in range(10)]
+hourly_means = [501, 499, 502, 500, 507, 501, 498, 500, 503, 499]
+
+# 尋找是否處於「失控 (Out of Control)」狀態
+out_of_control = [(t, val) for t, val in zip(time_hours, hourly_means) if val > ucl or val < lcl]
+
+print("\n--- 3. 品質管制監控 ---")
+print(f"管制界限: UCL = {ucl:.1f} ml, CL = {target_mu:.1f} ml, LCL = {lcl:.1f} ml")
+if out_of_control:
+    for t, val in out_of_control:
+        print(f"⚠️ 警報！時段 {t} 樣本平均數 {val} ml 超出管制界限！請檢查機台或原料。")
+else:
+    print("✅ 所有時段製程皆在正常管制範圍內。")</code></pre>
+</section>
+
 <section><h2 id="example">範例解析</h2>
-<div class="placeholder">
-  <strong>範例待補：</strong>
-  可以加入資料集、計算步驟、圖表與結果解讀。
+<div class="callout">
+  <strong>【解析 1】為什麼 CLT 模擬中，標準誤隨著 $n$ 增大而縮小？</strong><br>
+  從 Python 輸出可以觀察到，無論 $n$ 為多少，樣本平均數的均值始終圍繞在母體均值（10）左右；但當樣本數從 $n=1$ 增加到 $n=100$ 時，變異程度（標準誤）大幅縮小。這驗證了 $SE = \frac{\sigma}{\sqrt{n}}$ 的概念：<b>大樣本能有效抗衡隨機誤差，提供更穩定的估計</b>。
+</div>
+<br>
+<div class="callout">
+  <strong>【解析 2】咖啡灌裝機台為什麼抽 4 瓶，而不是看單瓶？</strong><br>
+  在品質管制實作中，我們觀察的是「4 瓶的平均灌裝量（$\bar{X}$）」而非單一瓶裝。單瓶咖啡可能因為偶然變異多一點或少一點，若用單瓶檢視容易誤報；但若<b>平均數</b>超過了上限 $UCL = 506\text{ ml}$（如 13:00 的 507 ml），代表整體分配已經發生偏移，屬於需要立即排除的「異常變異（Assignable variation）」。
 </div>
 </section>
+
 <section><h2 id="practice">練習題</h2>
 <ol>
-  <li>概念題：請解釋本章最重要的統計概念。</li>
-  <li>計算題：請使用 Python 完成一個基礎分析。</li>
-  <li>應用題：請根據分析結果提出結論。</li>
+  <li><strong>概念題：</strong>請解釋「標準差 $SD(X)$」與「標準誤 $SE(\bar{X})$」在統計意義上有何根本不同？</li>
+  <li><strong>計算題：</strong>某行銷班級有 340 名學生，其中隨機抽取 34 名學生，期中考平均成績為 72 分。已知全校平均為 73 分，標準差為 10 分。由於樣本佔總母體 10%（超過 5%），請使用 Python 加上**有限母體校正因子（FPCF, $\sqrt{\frac{N-n}{N-1}}$）**，計算其正確的標準誤與 Z 分數。</li>
+  <li><strong>應用題：</strong>某電子零件歷史正常不良率 $p = 2\%$，品管人員每天隨機抽檢 $n = 200$ 個。若今天抽檢發現不良率為 $4\%$（昨天為 $2\%$），請透過計算比例管制圖的上限 ($UCL$)，判斷今天製程是否真的出現「失控」，還是僅為隨機抽樣波動？</li>
 </ol>
 </section>
+
 <section><h2 id="summary">本章重點整理</h2>
 <div class="callout">
-  本區可整理三到五個重點，作為考前複習與快速查閱。
+  <ul>
+    <li><strong>大樣本不能修復有偏差的抽樣方法：</strong>即便樣本很大（如 LINE 群組自願回覆 1,000 份），若抽樣框架有偏差（選擇性偏差、未回覆偏差），估計結果依然會失準。</li>
+    <li><strong>標準誤公式：</strong>連續變數平均數標準誤為 $SE = \frac{\sigma}{\sqrt{n}}$；比例變數標準誤為 $SE = \sqrt{\frac{p(1-p)}{n}}$。</li>
+    <li><strong>CLT 的強大之處：</strong>當 $n \ge 30$（比例抽樣則需滿足 $np \ge 5$ 且 $n(1-p) \ge 5$），即可直接呼叫 `scipy.stats.norm` 採用常態分配進行機率計算與假設檢定。</li>
+    <li><strong>管制圖（Control Charts）：</strong>X-bar 針對連續型資料（如重量、長度）；P-chart 針對質化/比例資料（如良率、不良率）。上下界限皆設定在中心線旁 $\pm 3\times SE$ 的位置。</li>
+  </ul>
 </div>
 </section>
 
@@ -84,7 +176,7 @@ print("Hello, Statistics!")</code></pre>
       
         <a href="ch08.html">
           <span class="pagination-label">下一章 →</span>
-          <span class="pagination-title">第 8 章｜抽樣與抽樣分配</span>
+          <span class="pagination-title">第 8 章｜信賴區間估計</span>
         </a>
         
     </nav>
