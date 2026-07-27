@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Python 統計學教室第 7 章：抽樣與抽樣分配">
-  <title>第 7 章｜抽樣與抽樣分配｜Python 統計學教室</title>
+  <meta name="description" content="Python 統計學教室第 7 章：抽樣">
+  <title>第 7 章｜抽樣｜Python 統計學教室</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body data-chapter="07">
@@ -20,7 +20,6 @@
   </div>
 </header>
 
-
 <div class="site-layout">
   <aside class="sidebar" aria-label="課程章節導覽">
     <p class="sidebar-title">Course Menu</p>
@@ -30,159 +29,480 @@
   <main class="content">
     <section class="hero">
       <p class="eyebrow">Chapter 07</p>
-      <h1>抽樣與抽樣分配</h1>
-      <p class="lead">理解中央極限定理、標準誤以及如何在 Python 中實作統計抽樣</p>
+      <h1>抽樣</h1>
+      <p class="lead">
+        用 Python 練習簡單隨機抽樣、分層抽樣、集群抽樣，以及中央極限定理的模擬。
+      </p>
     </section>
 
-    <section><h2 id="learning-goals">本章學習目標</h2>
-<ul>
-  <li>瞭解常見的抽樣偏差與隨機抽樣方法（簡單隨機、分層、集群抽樣）。</li>
-  <li>區分母體參數（Parameter）與樣本統計量（Statistic）。</li>
-  <li>掌握樣本平均數與樣本比例的抽樣分配及「標準誤」（Standard Error, SE）。</li>
-  <li>深刻理解**中央極限定理（Central Limit Theorem, CLT）**的統計意義與應用。</li>
-  <li>能使用 Python（SciPy / NumPy / Matplotlib）計算機率、模擬 CLT 並繪製品質管制圖（Control Charts）。</li>
-</ul>
-</section>
+    <section>
+      <h2 id="learning-goals">本章學習目標</h2>
+      <ul>
+        <li>會用 Python 從資料中抽出樣本。</li>
+        <li>會實作簡單隨機抽樣、分層抽樣、集群抽樣與便利抽樣示意。</li>
+        <li>會用重複抽樣模擬樣本平均數的抽樣分配。</li>
+        <li>會用圖形觀察中央極限定理：樣本平均數會逐漸接近常態分配。</li>
+      </ul>
+    </section>
 
-<section><h2 id="concepts">核心觀念</h2>
-<p>在推論統計中，我們通常無法實測整個母體（Population），而是透過抽取樣本（Sample）來推估母體參數。抽樣的過程會產生**隨機波動（抽樣誤差）**，而統計學的核心概念就是研究這些統計量在重複抽樣下的機率分配——即**抽樣分配（Sampling Distribution）**。</p>
-<ul>
-  <li><strong>標準誤（Standard Error, SE）：</strong>用來衡量樣本統計量（如平均數 $\bar{x}$）在不同樣本之間的變異程度。平均數標準誤公式為 $SE(\bar{X}) = \frac{\sigma}{\sqrt{n}}$。樣本數 $n$ 增加 4 倍，標準誤會減半。</li>
-  <li><strong>中央極限定理（CLT）：</strong>不論母體原本的分配形狀為何（即使是均勻分配或指數分配），只要**樣本數足夠大（通常 $n \ge 30$）**，其「樣本平均數 $\bar{X}$」的抽樣分配都會趨近於常態分配。</li>
-  <li><strong>統計品質管制（SQC）：</strong>利用抽樣分配的原理（均值 $\pm 3\times SE$）建立管制界限（UCL / LCL），藉此區分製程中的「偶然變異（Chance variation）」與「異常變異（Assignable variation）」。</li>
-</ul>
-</section>
+    <section>
+      <h2 id="setup">0. 套件與範例資料</h2>
+      <p>
+        這一章直接用一份模擬的學生資料做練習。
+        每一列代表一位學生，包含學院、年級、班級、每週讀書時數與是否回覆問卷。
+      </p>
 
-<section><h2 id="python-demo">Python 實作</h2>
-<p>以下程式碼將示範本章的三個核心統計情境：<b>中央極限定理模擬</b>、<b>樣本平均數與比例的機率計算</b>，以及<b>品質管制圖（Control Chart）實作</b>。</p>
 <pre><code>import numpy as np
 import pandas as pd
-import scipy.stats as stats
 import matplotlib.pyplot as plt
 
-# 設定隨機種子以確保結果可重複
 np.random.seed(42)
 
-# ==========================================
-# 1. 中央極限定理 (CLT) 模擬：從非常態母體抽樣
-# ==========================================
-# 假設母體為「指數分配」（右偏嚴重，非常態），平均數 = 10
-population_mean = 10
-population_data = np.random.exponential(scale=population_mean, size=100000)
+N = 20000
 
-sample_sizes = [1, 5, 30, 100]
-sample_means_dict = {}
+population = pd.DataFrame({
+    "student_id": np.arange(1, N + 1),
+    "college": np.random.choice(
+        ["管理學院", "工程學院", "電機學院", "人社學院"],
+        size=N,
+        p=[0.25, 0.35, 0.25, 0.15]
+    ),
+    "grade": np.random.choice([1, 2, 3, 4], size=N),
+    "class_id": np.random.choice([f"C{i:03d}" for i in range(1, 301)], size=N),
+})
 
-# 模擬重複抽樣 2,000 次
-num_samples = 2000
+college_effect = {
+    "管理學院": 1.0,
+    "工程學院": 2.0,
+    "電機學院": 2.5,
+    "人社學院": 0.5
+}
+
+population["study_hours"] = (
+    np.random.normal(loc=14, scale=5, size=N)
+    + population["college"].map(college_effect)
+)
+
+population["study_hours"] = population["study_hours"].clip(lower=0)
+
+population["responded"] = np.random.choice(
+    [1, 0],
+    size=N,
+    p=[0.35, 0.65]
+)
+
+population.head()</code></pre>
+
+      <p>先看母體資料的大小與真正的母體平均數：</p>
+
+<pre><code>population.shape
+
+true_mean = population["study_hours"].mean()
+true_std = population["study_hours"].std(ddof=0)
+
+print("母體平均數：", round(true_mean, 3))
+print("母體標準差：", round(true_std, 3))</code></pre>
+    </section>
+
+    <section>
+      <h2 id="simple-random-sampling">1. 簡單隨機抽樣</h2>
+      <p>
+        簡單隨機抽樣就是從母體中隨機抽出指定數量的觀察值。
+        在 Pandas 中可以直接使用 <code>.sample()</code>。
+      </p>
+
+<pre><code>sample_srs = population.sample(n=100, random_state=42)
+
+sample_srs.head()</code></pre>
+
+      <p>計算樣本平均數：</p>
+
+<pre><code>srs_mean = sample_srs["study_hours"].mean()
+
+print("簡單隨機樣本平均數：", round(srs_mean, 3))
+print("母體平均數：", round(true_mean, 3))
+print("差距：", round(srs_mean - true_mean, 3))</code></pre>
+
+      <h3 id="sampling-with-replacement">有放回與無放回抽樣</h3>
+      <p>
+        <code>replace=False</code> 表示抽過的人不會再被抽到；
+        <code>replace=True</code> 表示抽完後放回，可能重複抽到同一筆資料。
+      </p>
+
+<pre><code>sample_without_replacement = population.sample(
+    n=10,
+    replace=False,
+    random_state=1
+)
+
+sample_with_replacement = population.sample(
+    n=10,
+    replace=True,
+    random_state=1
+)
+
+sample_with_replacement["student_id"].value_counts()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="sampling-ids">2. 從名冊抽出學生 ID</h2>
+      <p>
+        如果只有學生名冊，也可以先抽出 ID，再回頭合併或篩選資料。
+      </p>
+
+<pre><code>student_ids = population["student_id"]
+
+selected_ids = student_ids.sample(n=100, random_state=7)
+
+selected_ids.head()</code></pre>
+
+      <p>使用抽出的 ID 篩選完整資料：</p>
+
+<pre><code>sample_by_id = population[
+    population["student_id"].isin(selected_ids)
+]
+
+sample_by_id.head()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="stratified-sampling">3. 分層抽樣</h2>
+      <p>
+        分層抽樣會先依某個欄位分組，例如學院或年級，
+        再從每一層中抽出樣本。這裡示範按「學院」分層。
+      </p>
+
+      <h3 id="equal-stratified">每層抽一樣多人</h3>
+
+<pre><code>sample_strat_equal = (
+    population
+    .groupby("college", group_keys=False)
+    .apply(lambda x: x.sample(n=30, random_state=42))
+)
+
+sample_strat_equal["college"].value_counts()</code></pre>
+
+      <h3 id="proportional-stratified">依照各層比例抽樣</h3>
+
+<pre><code>n_total = 200
+
+college_prop = population["college"].value_counts(normalize=True)
+
+sample_sizes = (college_prop * n_total).round().astype(int)
+
+sample_sizes</code></pre>
+
+<pre><code>sample_strat_prop = (
+    population
+    .groupby("college", group_keys=False)
+    .apply(lambda x: x.sample(
+        n=sample_sizes.loc[x.name],
+        random_state=42
+    ))
+)
+
+sample_strat_prop["college"].value_counts(normalize=True)</code></pre>
+
+      <p>比較母體與比例分層樣本的學院比例：</p>
+
+<pre><code>compare_college = pd.DataFrame({
+    "母體比例": population["college"].value_counts(normalize=True),
+    "樣本比例": sample_strat_prop["college"].value_counts(normalize=True)
+})
+
+compare_college</code></pre>
+    </section>
+
+    <section>
+      <h2 id="cluster-sampling">4. 集群抽樣</h2>
+      <p>
+        集群抽樣會先抽出幾個群體，例如班級、校區、門市或地區，
+        再調查被抽中群體中的所有觀察值。
+      </p>
+
+<pre><code>selected_classes = np.random.choice(
+    population["class_id"].unique(),
+    size=10,
+    replace=False
+)
+
+selected_classes</code></pre>
+
+<pre><code>sample_cluster = population[
+    population["class_id"].isin(selected_classes)
+]
+
+sample_cluster.shape</code></pre>
+
+      <p>查看各班級被抽到的人數：</p>
+
+<pre><code>sample_cluster["class_id"].value_counts().head()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="convenience-sampling">5. 便利抽樣與自願回覆偏差示意</h2>
+      <p>
+        便利抽樣不是嚴格隨機抽樣。這裡用「只看有回覆問卷的人」示範，
+        即使樣本數很大，也可能和母體有差距。
+      </p>
+
+<pre><code>convenience_pool = population[population["responded"] == 1]
+
+sample_convenience = convenience_pool.sample(
+    n=1000,
+    random_state=42
+)
+
+print("母體平均讀書時數：", round(population["study_hours"].mean(), 3))
+print("便利樣本平均讀書時數：", round(sample_convenience["study_hours"].mean(), 3))
+print("回覆者比例：", round(convenience_pool.shape[0] / population.shape[0], 3))</code></pre>
+
+      <div class="callout">
+        樣本數大不代表一定是好樣本。若抽樣方式本身有偏差，
+        增加樣本數只能讓估計更穩定地偏掉，聽起來很殘酷，但統計就是這麼不講武德。
+      </div>
+    </section>
+
+    <section>
+      <h2 id="sampling-distribution">6. 重複抽樣：建立樣本平均數的抽樣分配</h2>
+      <p>
+        抽一次只會得到一個樣本平均數。
+        若重複抽很多次，把每次的樣本平均數收集起來，就能看到樣本平均數的抽樣分配。
+      </p>
+
+<pre><code>def simulate_sample_means(data, sample_size, n_sim=5000, random_state=42):
+    rng = np.random.default_rng(random_state)
+    values = data.to_numpy()
+    means = []
+
+    for _ in range(n_sim):
+        sample = rng.choice(values, size=sample_size, replace=False)
+        means.append(sample.mean())
+
+    return np.array(means)</code></pre>
+
+      <p>以樣本數 <code>n = 25</code> 重複抽樣 5,000 次：</p>
+
+<pre><code>sample_means_25 = simulate_sample_means(
+    population["study_hours"],
+    sample_size=25,
+    n_sim=5000,
+    random_state=42
+)
+
+sample_means_25[:10]</code></pre>
+
+      <p>畫出樣本平均數分布：</p>
+
+<pre><code>plt.figure(figsize=(8, 5))
+plt.hist(sample_means_25, bins=40)
+plt.axvline(true_mean, linestyle="--", label="Population Mean")
+plt.title("Sampling Distribution of Sample Mean, n = 25")
+plt.xlabel("Sample Mean")
+plt.ylabel("Frequency")
+plt.legend()
+plt.show()</code></pre>
+    </section>
+
+    <section>
+      <h2 id="standard-error">7. 樣本數變大，標準誤變小</h2>
+      <p>
+        這裡用不同樣本數重複抽樣，比較樣本平均數的分布寬度。
+      </p>
+
+<pre><code>sample_sizes = [4, 25, 100, 400]
+results = {}
+
 for n in sample_sizes:
-    # 每次抽出 n 個樣本，共抽 2000 次，計算平均數
-    samples = np.random.choice(population_data, size=(num_samples, n), replace=True)
-    sample_means_dict[f'n={n}'] = np.mean(samples, axis=1)
+    results[n] = simulate_sample_means(
+        population["study_hours"],
+        sample_size=n,
+        n_sim=5000,
+        random_state=42 + n
+    )
 
-print("--- 1. 中央極限定理模擬結果 ---")
-for n_label, means in sample_means_dict.items():
-    print(f"{n_label:5s} | 樣本平均數的均值: {np.mean(means):.2f} | 標準誤(SE): {np.std(means):.2f}")
+summary = pd.DataFrame({
+    "sample_size": sample_sizes,
+    "simulated_mean": [results[n].mean() for n in sample_sizes],
+    "simulated_se": [results[n].std(ddof=1) for n in sample_sizes],
+    "theoretical_se": [true_std / np.sqrt(n) for n in sample_sizes]
+})
 
+summary</code></pre>
 
-# ==========================================
-# 2. 抽樣分配機率計算 (以 Starbucks 冰咖啡為例)
-# ==========================================
-# 情境 A：連續變數 (樣本平均數 x̄)
-# 歷史母體平均消費 μ = 4.18, 標準差 σ = 0.84。隨機抽取 n = 50 人，計算平均消費 >= 4.26 的機率
-mu, sigma, n, x_bar = 4.18, 0.84, 50, 4.26
-se_mean = sigma / np.sqrt(n)
-z_mean = (x_bar - mu) / se_mean
-prob_mean = 1 - stats.norm.cdf(z_mean) # 或 stats.norm.sf(z_mean)
+      <p>把不同樣本數的抽樣分配畫在一起：</p>
 
-print("\n--- 2. 冰咖啡調查機率計算 ---")
-print(f"平均消費 >= $4.26 的機率: {prob_mean:.4f} (Z = {z_mean:.2f})")
+<pre><code>plt.figure(figsize=(9, 5))
 
-# 情境 B：比例變數 (樣本比例 p̂)
-# 歷史女性比例 p = 0.43。隨機抽取 n = 50 人，計算女性比例 >= 0.46 的機率
-p_pop, n_prop, p_bar = 0.43, 50, 0.46
-se_prop = np.sqrt((p_pop * (1 - p_pop)) / n_prop)
-z_prop = (p_bar - p_pop) / se_prop
-prob_prop = 1 - stats.norm.cdf(z_prop)
+for n in sample_sizes:
+    plt.hist(
+        results[n],
+        bins=40,
+        density=True,
+        label=f"n = {n}"
+    )
 
-print(f"女性顧客比例 >= 46% 的機率: {prob_prop:.4f} (Z = {z_prop:.2f})")
+plt.axvline(true_mean, linestyle="--", label="Population Mean")
+plt.title("Sample Size and Sampling Distribution")
+plt.xlabel("Sample Mean")
+plt.ylabel("Density")
+plt.legend()
+plt.show()</code></pre>
 
+      <div class="callout">
+        可以觀察到：樣本數愈大，樣本平均數愈集中在母體平均數附近。
+        也就是說，樣本平均數會比較不晃。
+      </div>
+    </section>
 
-# ==========================================
-# 3. 統計品質管制圖 (X-bar Chart) 實作
-# ==========================================
-# 瓶裝咖啡標準灌裝量 μ = 500 ml，標準差 σ = 4 ml。每小時抽樣 n = 4 瓶，共檢查 10 個時段
-target_mu, std_dev, sample_n = 500, 4, 4
-se_qc = std_dev / np.sqrt(sample_n) # SE = 4 / sqrt(4) = 2.0
+    <section>
+      <h2 id="central-limit-theorem">8. 中央極限定理模擬</h2>
+      <p>
+        這個範例故意使用非常右偏的指數分配當母體。
+        原始資料不是常態，但樣本平均數的分布會隨著樣本數變大而越來越像常態。
+      </p>
 
-# 建立 3 倍標準誤的管制界限 (3-Sigma Limits)
-ucl = target_mu + 3 * se_qc # 506
-lcl = target_mu - 3 * se_qc # 494
+      <h3 id="create-skewed-population">建立右偏母體</h3>
 
-# 模擬 10 個時段的樣本平均數（假設下午 13:00 發生設備異常，灌裝量衝高到 507 ml）
-time_hours = [f"{9+i}:00" for i in range(10)]
-hourly_means = [501, 499, 502, 500, 507, 501, 498, 500, 503, 499]
+<pre><code>np.random.seed(123)
 
-# 尋找是否處於「失控 (Out of Control)」狀態
-out_of_control = [(t, val) for t, val in zip(time_hours, hourly_means) if val > ucl or val < lcl]
+skewed_population = np.random.exponential(
+    scale=10,
+    size=100000
+)
 
-print("\n--- 3. 品質管制監控 ---")
-print(f"管制界限: UCL = {ucl:.1f} ml, CL = {target_mu:.1f} ml, LCL = {lcl:.1f} ml")
-if out_of_control:
-    for t, val in out_of_control:
-        print(f"⚠️ 警報！時段 {t} 樣本平均數 {val} ml 超出管制界限！請檢查機台或原料。")
-else:
-    print("✅ 所有時段製程皆在正常管制範圍內。")</code></pre>
-</section>
+plt.figure(figsize=(8, 5))
+plt.hist(skewed_population, bins=80)
+plt.title("Original Population: Exponential Distribution")
+plt.xlabel("Value")
+plt.ylabel("Frequency")
+plt.show()</code></pre>
 
-<section><h2 id="example">範例解析</h2>
-<div class="callout">
-  <strong>【解析 1】為什麼 CLT 模擬中，標準誤隨著 $n$ 增大而縮小？</strong><br>
-  從 Python 輸出可以觀察到，無論 $n$ 為多少，樣本平均數的均值始終圍繞在母體均值（10）左右；但當樣本數從 $n=1$ 增加到 $n=100$ 時，變異程度（標準誤）大幅縮小。這驗證了 $SE = \frac{\sigma}{\sqrt{n}}$ 的概念：<b>大樣本能有效抗衡隨機誤差，提供更穩定的估計</b>。
-</div>
-<br>
-<div class="callout">
-  <strong>【解析 2】咖啡灌裝機台為什麼抽 4 瓶，而不是看單瓶？</strong><br>
-  在品質管制實作中，我們觀察的是「4 瓶的平均灌裝量（$\bar{X}$）」而非單一瓶裝。單瓶咖啡可能因為偶然變異多一點或少一點，若用單瓶檢視容易誤報；但若<b>平均數</b>超過了上限 $UCL = 506\text{ ml}$（如 13:00 的 507 ml），代表整體分配已經發生偏移，屬於需要立即排除的「異常變異（Assignable variation）」。
-</div>
-</section>
+      <h3 id="clt-simulation">模擬不同 n 的樣本平均數</h3>
 
-<section><h2 id="practice">練習題</h2>
-<ol>
-  <li><strong>概念題：</strong>請解釋「標準差 $SD(X)$」與「標準誤 $SE(\bar{X})$」在統計意義上有何根本不同？</li>
-  <li><strong>計算題：</strong>某行銷班級有 340 名學生，其中隨機抽取 34 名學生，期中考平均成績為 72 分。已知全校平均為 73 分，標準差為 10 分。由於樣本佔總母體 10%（超過 5%），請使用 Python 加上**有限母體校正因子（FPCF, $\sqrt{\frac{N-n}{N-1}}$）**，計算其正確的標準誤與 Z 分數。</li>
-  <li><strong>應用題：</strong>某電子零件歷史正常不良率 $p = 2\%$，品管人員每天隨機抽檢 $n = 200$ 個。若今天抽檢發現不良率為 $4\%$（昨天為 $2\%$），請透過計算比例管制圖的上限 ($UCL$)，判斷今天製程是否真的出現「失控」，還是僅為隨機抽樣波動？</li>
-</ol>
-</section>
+<pre><code>def clt_simulation(population_values, sample_size, n_sim=5000, random_state=0):
+    rng = np.random.default_rng(random_state)
+    means = []
 
-<section><h2 id="summary">本章重點整理</h2>
-<div class="callout">
-  <ul>
-    <li><strong>大樣本不能修復有偏差的抽樣方法：</strong>即便樣本很大（如 LINE 群組自願回覆 1,000 份），若抽樣框架有偏差（選擇性偏差、未回覆偏差），估計結果依然會失準。</li>
-    <li><strong>標準誤公式：</strong>連續變數平均數標準誤為 $SE = \frac{\sigma}{\sqrt{n}}$；比例變數標準誤為 $SE = \sqrt{\frac{p(1-p)}{n}}$。</li>
-    <li><strong>CLT 的強大之處：</strong>當 $n \ge 30$（比例抽樣則需滿足 $np \ge 5$ 且 $n(1-p) \ge 5$），即可直接呼叫 `scipy.stats.norm` 採用常態分配進行機率計算與假設檢定。</li>
-    <li><strong>管制圖（Control Charts）：</strong>X-bar 針對連續型資料（如重量、長度）；P-chart 針對質化/比例資料（如良率、不良率）。上下界限皆設定在中心線旁 $\pm 3\times SE$ 的位置。</li>
-  </ul>
-</div>
-</section>
+    for _ in range(n_sim):
+        sample = rng.choice(population_values, size=sample_size, replace=True)
+        means.append(sample.mean())
+
+    return np.array(means)
+
+n_list = [1, 2, 5, 30, 100]
+
+clt_results = {
+    n: clt_simulation(
+        skewed_population,
+        sample_size=n,
+        n_sim=5000,
+        random_state=100 + n
+    )
+    for n in n_list
+}</code></pre>
+
+      <p>分別畫出不同樣本數下的樣本平均數分布：</p>
+
+<pre><code>for n in n_list:
+    plt.figure(figsize=(8, 5))
+    plt.hist(clt_results[n], bins=50, density=True)
+    plt.axvline(skewed_population.mean(), linestyle="--", label="Population Mean")
+    plt.title(f"CLT Simulation: Distribution of Sample Means, n = {n}")
+    plt.xlabel("Sample Mean")
+    plt.ylabel("Density")
+    plt.legend()
+    plt.show()</code></pre>
+
+      <p>用表格比較平均數與標準誤：</p>
+
+<pre><code>clt_summary = pd.DataFrame({
+    "sample_size": n_list,
+    "mean_of_sample_means": [clt_results[n].mean() for n in n_list],
+    "sd_of_sample_means": [clt_results[n].std(ddof=1) for n in n_list],
+    "theoretical_se": [skewed_population.std(ddof=0) / np.sqrt(n) for n in n_list]
+})
+
+clt_summary</code></pre>
+    </section>
+
+    <section>
+      <h2 id="normal-probability">9. 樣本平均數機率計算範例</h2>
+      <p>
+        假設某飲品消費金額的母體平均為 4.18，母體標準差為 0.84。
+        現在抽 50 位顧客，想計算樣本平均消費金額大於等於 4.26 的機率。
+      </p>
+
+<pre><code>from scipy.stats import norm
+
+mu = 4.18
+sigma = 0.84
+n = 50
+x_bar = 4.26
+
+se = sigma / np.sqrt(n)
+z = (x_bar - mu) / se
+
+prob = 1 - norm.cdf(z)
+
+print("標準誤 SE =", round(se, 4))
+print("z 值 =", round(z, 4))
+print("P(X_bar >= 4.26) =", round(prob, 4))</code></pre>
+
+      <p>也可以直接寫成一個函式：</p>
+
+<pre><code>def prob_sample_mean_greater_equal(x_bar, mu, sigma, n):
+    se = sigma / np.sqrt(n)
+    z = (x_bar - mu) / se
+    return 1 - norm.cdf(z)
+
+prob_sample_mean_greater_equal(
+    x_bar=4.26,
+    mu=4.18,
+    sigma=0.84,
+    n=50
+)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="practice">練習題</h2>
+      <ol>
+        <li>從 <code>population</code> 中簡單隨機抽出 300 筆資料，計算 <code>study_hours</code> 的平均數。</li>
+        <li>依照 <code>grade</code> 分層，每個年級各抽 50 位學生。</li>
+        <li>隨機抽出 5 個 <code>class_id</code>，取出這些班級的所有學生。</li>
+        <li>將樣本數改成 <code>n = 10, 50, 200</code>，重跑中央極限定理模擬並比較圖形。</li>
+        <li>使用 <code>scipy.stats.norm</code> 計算：若 <code>mu = 70</code>、<code>sigma = 15</code>、<code>n = 100</code>，樣本平均數大於 73 的機率。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="summary">本章重點整理</h2>
+      <ul>
+        <li><code>DataFrame.sample()</code> 可以快速完成簡單隨機抽樣。</li>
+        <li><code>groupby().apply()</code> 可以實作分層抽樣。</li>
+        <li>集群抽樣可以先抽群體 ID，再篩選出群體內所有資料。</li>
+        <li>便利抽樣容易有偏差，即使樣本數很大也不代表有代表性。</li>
+        <li>重複抽樣可以模擬樣本平均數的抽樣分配。</li>
+        <li>樣本數越大，樣本平均數的標準誤越小。</li>
+        <li>中央極限定理可以用模擬觀察：即使母體不是常態，樣本平均數的分布也會逐漸接近常態。</li>
+      </ul>
+    </section>
 
     <nav class="chapter-pagination" aria-label="章節切換">
-      
-        <a href="ch06.html">
-          <span class="pagination-label">← 上一章</span>
-          <span class="pagination-title">第 6 章｜機率基礎</span>
-        </a>
-        
-      
-        <a href="ch08.html">
-          <span class="pagination-label">下一章 →</span>
-          <span class="pagination-title">第 8 章｜信賴區間估計</span>
-        </a>
-        
+      <a href="ch06.html">
+        <span class="pagination-label">← 上一章</span>
+        <span class="pagination-title">第 6 章｜機率基礎</span>
+      </a>
+
+      <a href="ch08.html">
+        <span class="pagination-label">下一章 →</span>
+        <span class="pagination-title">第 8 章｜抽樣與抽樣分配</span>
+      </a>
     </nav>
 
     <footer class="site-footer">
-      © <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages.
+      <p>© <span id="current-year"></span> Python 統計學教室．Built for GitHub Pages.</p>
+      <p>此教材基於 2025 統計學（暑）蕭佳蘋助教之教材改編而成。</p>
     </footer>
   </main>
 
