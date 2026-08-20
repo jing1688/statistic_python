@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Python 統計學教室第 11 章：兩組與多組比較">
-  <title>第 11 章｜兩組與多組比較｜Python 統計學教室</title>
+  <meta name="description" content="Python 統計學教室第 11 章：變異數檢定">
+  <title>第 11 章｜變異數檢定｜Python 統計學教室</title>
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 <body data-chapter="11">
@@ -20,7 +20,6 @@
   </div>
 </header>
 
-
 <div class="site-layout">
   <aside class="sidebar" aria-label="課程章節導覽">
     <p class="sidebar-title">Course Menu</p>
@@ -30,63 +29,340 @@
   <main class="content">
     <section class="hero">
       <p class="eyebrow">Chapter 11</p>
-      <h1>兩組與多組比較</h1>
-      <p class="lead">t 檢定、卡方檢定與變異數分析</p>
+      <h1>變異數檢定</h1>
+      <p class="lead">
+        兩個可以直接複製修改的 Python 模板：
+        單一母體變異數卡方檢定與兩母體變異數 F 檢定。
+      </p>
     </section>
 
-    <section><h2 id="learning-goals">本章學習目標</h2>
-<ul>
-  <li>理解本章核心概念。</li>
-  <li>知道如何使用 Python 完成基本分析。</li>
-  <li>能解讀輸出結果並說明其統計意義。</li>
-</ul>
-</section>
-<section><h2 id="concepts">核心觀念</h2>
-<div class="placeholder">
-  <strong>內容待補：</strong>
-  這裡可以放定義、重要公式、直覺解釋與常見誤區。
-</div>
-</section>
-<section><h2 id="python-demo">Python 實作</h2>
-<p>以下先保留一個可替換的程式碼區塊：</p>
-<pre><code># TODO: 在此加入本章 Python 範例
-import numpy as np
-import pandas as pd
+    <section>
+      <h2 id="choose-test">先選你要哪一個</h2>
+      <ul>
+        <li><strong>一組資料，檢定母體變異數：</strong>Chi-square test。</li>
+        <li><strong>兩組資料，比較兩個母體變異數：</strong>F-test。</li>
+      </ul>
 
-print("Hello, Statistics!")</code></pre>
-</section>
-<section><h2 id="example">範例解析</h2>
-<div class="placeholder">
-  <strong>範例待補：</strong>
-  可以加入資料集、計算步驟、圖表與結果解讀。
-</div>
-</section>
-<section><h2 id="practice">練習題</h2>
-<ol>
-  <li>概念題：請解釋本章最重要的統計概念。</li>
-  <li>計算題：請使用 Python 完成一個基礎分析。</li>
-  <li>應用題：請根據分析結果提出結論。</li>
-</ol>
-</section>
-<section><h2 id="summary">本章重點整理</h2>
-<div class="callout">
-  本區可整理三到五個重點，作為考前複習與快速查閱。
-</div>
-</section>
+      <div class="callout">
+        這一章只需要記得：<strong>一個變異數用 χ²，兩個變異數相比用 F。</strong>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="chi-square-test">11.1 單一母體變異數卡方檢定</h2>
+
+      <p>
+        用來檢定一個母體的變異數是否等於指定值。
+        只要修改資料、H₀ 的變異數、α 與檢定方向。
+      </p>
+
+<pre><code>import numpy as np
+from scipy import stats
+
+# =========================================================
+# 模型 1：單一母體變異數卡方檢定
+# H0: σ² = sigma2_0
+# =========================================================
+
+# ---------------------------------------------------------
+# 使用者設定區：只需要改這裡
+# ---------------------------------------------------------
+
+data = np.array([
+    10, 12, 9, 11, 13,
+    10, 8, 12, 11, 14
+], dtype=float)
+
+# H0 中假設的母體變異數
+sigma2_0 = 4
+
+# 顯著水準
+alpha = 0.05
+
+# "two-sided"：H1: σ² != sigma2_0
+# "greater"  ：H1: σ² &gt; sigma2_0
+# "less"     ：H1: σ² &lt; sigma2_0
+alternative = "two-sided"
+
+
+# ---------------------------------------------------------
+# 計算檢定統計量
+# ---------------------------------------------------------
+
+n = len(data)
+
+sample_variance = np.var(
+    data,
+    ddof=1
+)
+
+df = n - 1
+
+chi_square = (
+    df * sample_variance
+) / sigma2_0
+
+
+# ---------------------------------------------------------
+# 計算 p-value
+# ---------------------------------------------------------
+
+cdf_value = stats.chi2.cdf(
+    chi_square,
+    df=df
+)
+
+if alternative == "two-sided":
+
+    p_value = 2 * min(
+        cdf_value,
+        1 - cdf_value
+    )
+
+    p_value = min(
+        p_value,
+        1.0
+    )
+
+elif alternative == "greater":
+
+    p_value = 1 - cdf_value
+
+else:
+
+    p_value = cdf_value
+
+
+# ---------------------------------------------------------
+# 自動產生 H0、H1
+# ---------------------------------------------------------
+
+h0 = f"H0: σ² = {sigma2_0}"
+
+if alternative == "two-sided":
+
+    h1 = f"H1: σ² ≠ {sigma2_0}"
+
+elif alternative == "greater":
+
+    h1 = f"H1: σ² &gt; {sigma2_0}"
+
+else:
+
+    h1 = f"H1: σ² &lt; {sigma2_0}"
+
+
+# ---------------------------------------------------------
+# 自動判斷
+# ---------------------------------------------------------
+
+if p_value &lt; alpha:
+
+    decision = "拒絕 H0"
+    conclusion = "有足夠證據支持 H1。"
+
+else:
+
+    decision = "不拒絕 H0"
+    conclusion = "沒有足夠證據支持 H1。"
+
+
+# ---------------------------------------------------------
+# 輸出
+# ---------------------------------------------------------
+
+print("=== 單一母體變異數卡方檢定 ===")
+print(h0)
+print(h1)
+print("樣本數 n =", n)
+print("樣本變異數 =", round(sample_variance, 4))
+print("自由度 df =", df)
+print("χ² =", round(chi_square, 4))
+print("p-value =", round(p_value, 6))
+print("alpha =", alpha)
+print("決策：", decision)
+print("結論：", conclusion)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="f-test">11.2 兩母體變異數 F 檢定</h2>
+
+      <p>
+        用來比較兩個獨立母體的變異數。
+        只要修改兩組資料、α 與檢定方向。
+      </p>
+
+<pre><code>import numpy as np
+from scipy import stats
+
+# =========================================================
+# 模型 2：兩母體變異數 F 檢定
+# H0: σ1² / σ2² = 1
+# =========================================================
+
+# ---------------------------------------------------------
+# 使用者設定區：只需要改這裡
+# ---------------------------------------------------------
+
+group1 = np.array([
+    10, 12, 9, 11, 13,
+    10, 8, 12
+], dtype=float)
+
+group2 = np.array([
+    10, 11, 10, 9, 11,
+    10, 9, 10
+], dtype=float)
+
+alpha = 0.05
+
+# "two-sided"：H1: σ1² != σ2²
+# "greater"  ：H1: σ1² &gt; σ2²
+# "less"     ：H1: σ1² &lt; σ2²
+alternative = "two-sided"
+
+
+# ---------------------------------------------------------
+# 計算樣本變異數與 F 統計量
+# ---------------------------------------------------------
+
+var1 = np.var(
+    group1,
+    ddof=1
+)
+
+var2 = np.var(
+    group2,
+    ddof=1
+)
+
+df1 = len(group1) - 1
+df2 = len(group2) - 1
+
+F_stat = var1 / var2
+
+
+# ---------------------------------------------------------
+# 計算 p-value
+# ---------------------------------------------------------
+
+cdf_value = stats.f.cdf(
+    F_stat,
+    df1,
+    df2
+)
+
+if alternative == "two-sided":
+
+    p_value = 2 * min(
+        cdf_value,
+        1 - cdf_value
+    )
+
+    p_value = min(
+        p_value,
+        1.0
+    )
+
+elif alternative == "greater":
+
+    p_value = 1 - cdf_value
+
+else:
+
+    p_value = cdf_value
+
+
+# ---------------------------------------------------------
+# 自動產生 H0、H1
+# ---------------------------------------------------------
+
+h0 = "H0: σ1² / σ2² = 1"
+
+if alternative == "two-sided":
+
+    h1 = "H1: σ1² / σ2² ≠ 1"
+
+elif alternative == "greater":
+
+    h1 = "H1: σ1² / σ2² &gt; 1"
+
+else:
+
+    h1 = "H1: σ1² / σ2² &lt; 1"
+
+
+# ---------------------------------------------------------
+# 自動判斷
+# ---------------------------------------------------------
+
+if p_value &lt; alpha:
+
+    decision = "拒絕 H0"
+    conclusion = "有足夠證據支持 H1。"
+
+else:
+
+    decision = "不拒絕 H0"
+    conclusion = "沒有足夠證據支持 H1。"
+
+
+# ---------------------------------------------------------
+# 輸出
+# ---------------------------------------------------------
+
+print("=== 兩母體變異數 F 檢定 ===")
+print(h0)
+print(h1)
+print("Group 1 樣本變異數 =", round(var1, 4))
+print("Group 2 樣本變異數 =", round(var2, 4))
+print("F =", round(F_stat, 4))
+print("df1 =", df1)
+print("df2 =", df2)
+print("p-value =", round(p_value, 6))
+print("alpha =", alpha)
+print("決策：", decision)
+print("結論：", conclusion)</code></pre>
+    </section>
+
+    <section>
+      <h2 id="quick-guide">快速選擇</h2>
+      <ul>
+        <li><strong>一組資料 + 檢定變異數</strong> → χ² 檢定。</li>
+        <li><strong>兩組獨立資料 + 比較變異數</strong> → F 檢定。</li>
+        <li><code>p-value &lt; alpha</code> → 拒絕 H₀。</li>
+        <li><code>p-value ≥ alpha</code> → 不拒絕 H₀。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="practice">練習題</h2>
+      <ol>
+        <li>使用模型 1 檢定母體變異數是否等於 9。</li>
+        <li>將模型 1 改成右尾檢定，檢查母體變異數是否大於指定值。</li>
+        <li>使用模型 2 比較兩台機器的生產變異數是否不同。</li>
+        <li>將 <code>alpha</code> 從 0.05 改成 0.01，觀察結論是否改變。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="summary">本章重點整理</h2>
+      <div class="callout">
+        單一母體變異數使用 χ² 檢定；兩個母體變異數的比較使用 F 檢定。
+        程式只需要修改資料、H₀、α 與檢定方向即可直接使用。
+      </div>
+    </section>
 
     <nav class="chapter-pagination" aria-label="章節切換">
-      
-        <a href="ch10.html">
-          <span class="pagination-label">← 上一章</span>
-          <span class="pagination-title">第 10 章｜假設檢定</span>
-        </a>
-        
-      
-        <a href="ch12.html">
-          <span class="pagination-label">下一章 →</span>
-          <span class="pagination-title">第 12 章｜相關與迴歸分析</span>
-        </a>
-        
+      <a href="ch10.html">
+        <span class="pagination-label">← 上一章</span>
+        <span class="pagination-title">第 10 章｜兩組比較</span>
+      </a>
+
+      <a href="ch12.html">
+        <span class="pagination-label">下一章 →</span>
+        <span class="pagination-title">第 12 章</span>
+      </a>
     </nav>
 
     <footer class="site-footer">
@@ -99,6 +375,7 @@ print("Hello, Statistics!")</code></pre>
     <ul id="page-toc-list"></ul>
   </aside>
 </div>
+
 <div id="backdrop" class="backdrop"></div>
 <script src="../assets/js/site.js"></script>
 
